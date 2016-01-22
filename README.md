@@ -1,6 +1,6 @@
-PopHealth  Server
+# ptmatch
 ===============================
-
+A patient matching test harness to support PCOR
 
 Environment
 -----------
@@ -32,6 +32,6 @@ in this directory.
 This project also requires MongoDB 3.0.* or higher. To install MongoDB, refer to the
 [MongoDB installation guide](http://docs.mongodb.org/manual/installation/).
 
-To start the server, simply run server.go:
+To start the application, simply run server.go:
 
-    go run server.go
+    go run main.go
