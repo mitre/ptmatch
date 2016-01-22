@@ -1,0 +1,19 @@
+{
+  "id": "569408c1a291020e5b3636f6",
+  "name": "Record Set B",
+  "description": "Patients whose name field contains the string, john",
+  "resourceType" : "Patient",
+  "parameters" : {
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name" : "resourceUrl",
+        "valueString" : "http://acme.com/popHealth/fhir/Patient"
+      },
+      {
+        "name" : "name",
+        "valueString" : "john"
+      }
+    ]
+  }
+}

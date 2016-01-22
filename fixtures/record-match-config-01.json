@@ -1,0 +1,13 @@
+{
+  "resourceType": "RecordMatchConfiguration",
+  "id": "569408c1a291020e5b3637b4",
+  "name": "Record Matcher A, Configuration 1",
+  "description": "descriptive remarks that pertain to this configuration",
+  "matchingMode": "deduplication",
+  "recordResourceType": "Patient",
+  "recordMatchSystemInterfaceId": "569408c1a291020e5b3637a4",
+  "masterRecordSetId": "569408c1a291020e5b3636f4",
+  "meta": {
+    "lastUpdatedOn": "2016-01-06T10:00:00-05:00"
+  }
+}

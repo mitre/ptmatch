@@ -1,0 +1,19 @@
+{
+  "id": "569408c1a291020e5b3636f4",
+  "name": "Record Set A",
+  "description": "Patients whose name constains string, jon",
+  "resourceType" : "Patient",
+  "parameters" : {
+    "resourceType": "Parameters",
+    "parameter": [
+      {
+        "name" : "resourceUrl",
+        "valueString" : "http://acme.com/popHealth/fhir/Patient"
+      },
+      {
+        "name" : "name",
+        "valueString" : "jon"
+      }
+    ]
+  }
+}
