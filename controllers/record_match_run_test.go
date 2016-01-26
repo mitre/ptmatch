@@ -28,8 +28,8 @@ import (
 )
 
 var (
-	MongoSession *mgo.Session
-	Database     *mgo.Database
+	mongoSession *mgo.Session
+	database     *mgo.Database
 	controller   ResourceController
 )
 
@@ -49,40 +49,40 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 	var err error
 
 	// Set up the database
-	if MongoSession, err = mgo.Dial(s.DatabaseHost); err != nil {
+	if mongoSession, err = mgo.Dial(s.DatabaseHost); err != nil {
 		panic(err)
 	}
 
-	Database = MongoSession.DB(s.DatabaseName)
+	database = mongoSession.DB(s.DatabaseName)
 
 	controller = ResourceController{}
-	controller.Database = Database
+	controller.Database = database
 }
 
 func (s *ServerSuite) TearDownTest(c *C) {
-	Database.C("recordMatchConfigurations").DropCollection()
-	Database.C("recordMatchSystemInterfaces").DropCollection()
+	database.C("recordMatchConfigurations").DropCollection()
+	database.C("recordMatchSystemInterfaces").DropCollection()
 }
 
 func (s *ServerSuite) TearDownSuite(c *C) {
-	Database.DropDatabase()
-	MongoSession.Close()
+	database.DropDatabase()
+	mongoSession.Close()
 }
 
 func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 	// Insert a record match system interface to the DB
-	r := ptm_models.InsertResourceFromFile(Database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
+	r := ptm_models.InsertResourceFromFile(database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
 	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
 	c.Assert(*recMatchSysIface, NotNil)
 
 	// Insert a record set to the DB
-	r = ptm_models.InsertResourceFromFile(Database, "RecordSet", "../fixtures/record-set-01.json")
+	r = ptm_models.InsertResourceFromFile(database, "RecordSet", "../fixtures/record-set-01.json")
 	masterRecSet := r.(*ptm_models.RecordSet)
 	c.Assert(*masterRecSet, NotNil)
 
 	// Insert a corresponding record match configuration to the DB
 	recMatchConfig := &ptm_models.RecordMatchConfiguration{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", recMatchConfig)
 	recMatchConfig.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 	recMatchConfig.MasterRecordSetID = masterRecSet.ID
 	ptm_models.PersistResource(controller.Database, "RecordMatchConfiguration", recMatchConfig)
@@ -102,23 +102,23 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 
 func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 	// Insert a record match system interface to the DB
-	r := ptm_models.InsertResourceFromFile(Database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
+	r := ptm_models.InsertResourceFromFile(database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
 	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
 	c.Assert(*recMatchSysIface, NotNil)
 
 	// Insert a record set to the DB
-	r = ptm_models.InsertResourceFromFile(Database, "RecordSet", "../fixtures/record-set-01.json")
+	r = ptm_models.InsertResourceFromFile(database, "RecordSet", "../fixtures/record-set-01.json")
 	masterRecSet := r.(*ptm_models.RecordSet)
 	c.Assert(*masterRecSet, NotNil)
 
 	// Insert a 2nd record set to the DB
-	r = ptm_models.InsertResourceFromFile(Database, "RecordSet", "../fixtures/record-set-02.json")
+	r = ptm_models.InsertResourceFromFile(database, "RecordSet", "../fixtures/record-set-02.json")
 	queryRecSet := r.(*ptm_models.RecordSet)
 	c.Assert(*queryRecSet, NotNil)
 
 	// Insert a corresponding record match configuration to the DB
 	recMatchConfig := &ptm_models.RecordMatchConfiguration{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", recMatchConfig)
 	recMatchConfig.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 	recMatchConfig.MasterRecordSetID = masterRecSet.ID
 	recMatchConfig.QueryRecordSetID = queryRecSet.ID
@@ -141,13 +141,13 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	c.Assert(controller.Database, NotNil)
 	// Insert a record match system interface to the DB
-	r := ptm_models.InsertResourceFromFile(Database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
+	r := ptm_models.InsertResourceFromFile(database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
 	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
 	c.Assert(*recMatchSysIface, NotNil)
 
 	// Insert a corresponding record match configuration to the DB
 	recMatchConfig := &ptm_models.RecordMatchConfiguration{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", recMatchConfig)
 	recMatchConfig.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 	ptm_models.PersistResource(controller.Database, "RecordMatchConfiguration", recMatchConfig)
 	c.Assert(*recMatchConfig, NotNil)

@@ -173,7 +173,7 @@ func PersistResource(db *mgo.Database, resourceType string, resource interface{}
 func InsertResourceFromFile(db *mgo.Database, resourceType string, filePath string) interface{} {
 	collection := db.C(GetCollectionName(resourceType))
 	resource := NewStructForResourceName(resourceType)
-	LoadResourceFromFile(filePath, resourceType, resource)
+	LoadResourceFromFile(filePath, resource)
 
 	// Set a unique identifier to this resource
 	rptr := reflect.ValueOf(resource)
@@ -199,7 +199,7 @@ func InsertResourceFromFile(db *mgo.Database, resourceType string, filePath stri
 	return resource
 }
 
-func LoadResourceFromFile(fileName string, resourceType string, resource interface{}) {
+func LoadResourceFromFile(fileName string, resource interface{}) {
 	fstream, err := os.Open(fileName)
 	util.CheckErr(err)
 	defer fstream.Close()

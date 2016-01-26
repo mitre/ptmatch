@@ -22,24 +22,22 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
-	"reflect"
 	"regexp"
 	"strconv"
 	"testing"
 
 	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
-	"github.com/pebbe/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
-	"gopkg.in/mgo.v2/bson"
 
+	fhir_svr "github.com/intervention-engine/fhir/server"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
 type ServerSuite struct {
-	Server *PopHealthServer
+	Server *RecMatchServer
 }
 
 // Hook up gocheck into the "go test" runner.
@@ -51,16 +49,21 @@ var _ = Suite(&ServerSuite{})
 func (s *ServerSuite) SetUpSuite(c *C) {
 	var err error
 
-	s.Server = NewServer("localhost", "pophealth-test", ":8882")
+	s.Server = NewServer("localhost", "recmatch-test", ":8882")
 
+	var mongoSession *mgo.Session
 	// Set up the database
-	if MongoSession, err = mgo.Dial(s.Server.DatabaseHost); err != nil {
+	if mongoSession, err = mgo.Dial(s.Server.DatabaseHost()); err != nil {
 		panic(err)
 	}
 
-	Database = MongoSession.DB(s.Server.DatabaseName)
+	fhir_svr.MongoSession = mongoSession
+	//	database = mongoSession.DB(s.Server.DatabaseName)
+	SetDatabase(fhir_svr.MongoSession.DB(s.Server.DatabaseName))
 
+	registerMiddleware(s.Server)
 	registerRoutes(s.Server)
+	fhir_svr.RegisterRoutes(s.Server.FhirSvr.Echo, s.Server.FhirSvr.MiddlewareConfig)
 }
 
 // SetUpTest is invoked before each test
@@ -69,14 +72,17 @@ func (s *ServerSuite) SetUpTest(c *C) {
 }
 
 func (s *ServerSuite) TearDownTest(c *C) {
-	Database.C("recordMatchConfigurations").DropCollection()
-	Database.C("recordMatchSystemInterfaces").DropCollection()
-	Database.C("recordMatchSets").DropCollection()
+	/*
+		Database().C("recordMatchConfigurations").DropCollection()
+		Database().C("recordMatchSystemInterfaces").DropCollection()
+		Database().C("recordMatchSets").DropCollection()
+		Database().C("recordMatchRuns").DropCollection()
+	*/
 }
 
 func (s *ServerSuite) TearDownSuite(c *C) {
-	Database.DropDatabase()
-	MongoSession.Close()
+	//	Database().DropDatabase()
+	fhir_svr.MongoSession.Close()
 }
 
 func (s *ServerSuite) TestEchoRoutes(c *C) {
@@ -115,12 +121,14 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 
 	// Add record match configurations
 	for i := 0; i < len(recs); i++ {
-		r := insertResourceFromFile("RecordMatchConfiguration", "recordMatchConfigurations", "../fixtures/record-match-config-01.json")
+		r := ptm_models.InsertResourceFromFile(Database(), "RecordMatchConfiguration", "../fixtures/record-match-config-01.json")
 		recs[i] = r.(*ptm_models.RecordMatchConfiguration)
 	}
 
+	e := s.Server.Router()
+
 	// retrieve collection of record match configurations
-	code, body := request(echo.GET, "/RecordMatchConfiguration", nil, "", s.Server.Router)
+	code, body := request(echo.GET, "/RecordMatchConfiguration", nil, "", e)
 	c.Assert(code, Equals, http.StatusOK)
 	logger.Log.Debug("response body: " + body)
 
@@ -135,7 +143,7 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 	// Try to Get each resource created above
 	for _, rec := range recs {
 		path := "/RecordMatchConfiguration/" + rec.ID.Hex()
-		code, body = request(echo.GET, path, nil, "", s.Server.Router)
+		code, body = request(echo.GET, path, nil, "", e)
 		c.Assert(code, Equals, http.StatusOK)
 		// confirm response body contains resource ID
 		pat := regexp.MustCompile(rec.ID.Hex())
@@ -146,11 +154,11 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 	for _, rec := range recs {
 		path := "/RecordMatchConfiguration/" + rec.ID.Hex()
 		logger.Log.Debug("About to call DELETE: " + path)
-		code, body = request(echo.DELETE, path, nil, "", s.Server.Router)
+		code, body = request(echo.DELETE, path, nil, "", e)
 		c.Assert(code, Equals, http.StatusNoContent)
 	}
 
-	code, body = request(echo.GET, "/RecordMatchConfiguration", nil, "", s.Server.Router)
+	code, body = request(echo.GET, "/RecordMatchConfiguration", nil, "", e)
 	c.Assert(code, Equals, http.StatusOK)
 
 	for i, rec := range recs {
@@ -165,8 +173,10 @@ func (s *ServerSuite) TestPostRecordMatchSystemInterface(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-match-sys-if-01.json")
 	c.Assert(err, IsNil)
 
+	e := s.Server.Router()
+
 	code, body := request(echo.POST, "/RecordMatchSystemInterface",
-		bytes.NewReader(buf), "application/json", s.Server.Router)
+		bytes.NewReader(buf), "application/json", e)
 	c.Assert(code, Equals, http.StatusCreated)
 	c.Assert(body, NotNil)
 	logger.Log.Info("response body: " + body)
@@ -178,7 +188,7 @@ func (s *ServerSuite) TestPostRecordMatchSystemInterface(c *C) {
 	err = decoder.Decode(r)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"err": err, "resource": resource,
-			"method": "TestPostRecordMatchSystemInterface"}).Info("check error")
+			"func": "TestPostRecordMatchSystemInterface"}).Info("check error")
 	}
 	c.Assert(err, IsNil)
 
@@ -190,11 +200,11 @@ func (s *ServerSuite) TestPostRecordMatchSystemInterface(c *C) {
 
 	// Delete the resource created above
 	path := "/RecordMatchSystemInterface/" + resource.ID.Hex()
-	code, body = request(echo.DELETE, path, nil, "", s.Server.Router)
+	code, body = request(echo.DELETE, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNoContent)
 
 	// Verify the resource was deleted
-	code, body = request(echo.GET, path, nil, "", s.Server.Router)
+	code, body = request(echo.GET, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNotFound)
 }
 
@@ -202,9 +212,11 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-match-sys-if-01.json")
 	c.Assert(err, IsNil)
 
+	e := s.Server.Router()
+
 	// Post resource
 	code, body := request(echo.POST, "/RecordMatchSystemInterface",
-		bytes.NewReader(buf), "application/json", s.Server.Router)
+		bytes.NewReader(buf), "application/json", e)
 	c.Assert(code, Equals, http.StatusCreated)
 
 	// Decode response to get the resource identifier
@@ -214,8 +226,8 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	err = decoder.Decode(r)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"resource": resource,
-			"error":  err,
-			"method": "TestPutRecordMatchSystemInterface"}).Info("Check Error")
+			"error": err,
+			"func":  "TestPutRecordMatchSystemInterface"}).Info("Check Error")
 	}
 	c.Assert(err, IsNil)
 
@@ -234,10 +246,10 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 
 	path := "/RecordMatchSystemInterface/" + resource.ID.Hex()
 	logger.Log.WithFields(logrus.Fields{"path": path,
-		"method": "TestPutRecordMatchSystemInterface"}).Info("Prepare for Put")
+		"func": "TestPutRecordMatchSystemInterface"}).Info("Prepare for Put")
 	// Submit a known change; the resource ID in the URL should override the one in the body
 	code, body = request(echo.PUT, path,
-		bytes.NewReader(buf), "application/json", s.Server.Router)
+		bytes.NewReader(buf), "application/json", e)
 	c.Assert(code, Equals, http.StatusOK)
 	c.Assert(body, NotNil)
 
@@ -248,14 +260,14 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	err = decoder.Decode(r)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"resource": resource,
-			"error":  err,
-			"method": "TestPutRecordMatchSystemInterface"}).Info("after putting update")
+			"error": err,
+			"func":  "TestPutRecordMatchSystemInterface"}).Info("after putting update")
 	}
 	c.Assert(err, IsNil)
 
 	logger.Log.WithFields(logrus.Fields{"orig creation": origCreatedOn,
 		"creation": resource.Meta.CreatedOn,
-		"method":   "TestPutRecordMatchSystemInterface"}).Info("check vars")
+		"func":     "TestPutRecordMatchSystemInterface"}).Info("check vars")
 
 	// Verify the description has changed
 	c.Assert(resource.Description, Not(Equals), origDesc)
@@ -264,7 +276,7 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	c.Assert(resource.Meta.LastUpdatedOn, Not(Equals), origLastUpdatedOn)
 
 	// Delete the resource created above
-	code, body = request(echo.DELETE, path, nil, "", s.Server.Router)
+	code, body = request(echo.DELETE, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNoContent)
 }
 
@@ -272,8 +284,10 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-set-01.json")
 	c.Assert(err, IsNil)
 
+	e := s.Server.Router()
+
 	code, body := request(echo.POST, "/RecordSet",
-		bytes.NewReader(buf), "application/json", s.Server.Router)
+		bytes.NewReader(buf), "application/json", e)
 	c.Assert(code, Equals, http.StatusCreated)
 	c.Assert(body, NotNil)
 	logger.Log.Debug("Post Record Set response: " + body)
@@ -285,7 +299,7 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 	err = decoder.Decode(r)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"err": err, "resource": resource,
-			"method": "TestPostRecordSet"}).Info("check decode error")
+			"func": "TestPostRecordSet"}).Info("check decode error")
 	}
 	c.Assert(err, IsNil)
 
@@ -297,45 +311,15 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 
 	// Delete the resource created above
 	path := "/RecordSet/" + resource.ID.Hex()
-	code, body = request(echo.DELETE, path, nil, "", s.Server.Router)
+	code, body = request(echo.DELETE, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNoContent)
 
 	// Verify the resource was deleted
-	code, body = request(echo.GET, path, nil, "", s.Server.Router)
+	code, body = request(echo.GET, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNotFound)
 }
 
-func insertResourceFromFile(resourceType, collectionName string, filePath string) interface{} {
-	collection := Database.C(collectionName)
-	resource := ptm_models.NewStructForResourceName(resourceType)
-	ptm_models.LoadResourceFromFile(filePath, resourceType, resource)
-
-	// Set a unique identifier to this resource
-	rptr := reflect.ValueOf(resource)
-	r := rptr.Elem()
-	logger.Log.WithFields(logrus.Fields{"kind": r.Kind()}).Info("insertResourceFromFile")
-	if r.Kind() == reflect.Struct {
-		logger.Log.Info("insertResourceFromFile: Recognize struct")
-		f := r.FieldByName("ID")
-		if f.IsValid() {
-			logger.Log.Info("insertResourceFromFile: Id field is valid")
-			if f.CanSet() {
-				logger.Log.Info("insertResourceFromFile: Can Set Id field")
-				objID := bson.NewObjectId()
-				logger.Log.WithFields(logrus.Fields{"obj id": objID}).Info("insertResourceFromFile")
-				f.Set(reflect.ValueOf(objID))
-			}
-		}
-	}
-
-	//logger.Log.WithFields(logrus.Fields{"resource": resource}).Info("insertResourceFromFixture")
-	err := collection.Insert(resource)
-	util.CheckErr(err)
-	return resource
-}
-
 func request(method, path string, body io.Reader, ct string, e *echo.Echo) (int, string) {
-
 	r, _ := http.NewRequest(method, path, body)
 	if body != nil && ct != "" {
 		r.Header.Set("Content-Type", ct)
