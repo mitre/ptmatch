@@ -1,0 +1,87 @@
+{
+  "id": "56a22377a2910211dbe66e39",
+  "meta": {
+    "createdOn": "2016-01-22T12:41:27.378Z",
+    "lastUpdatedOn": "2016-01-22T12:41:27.378Z"
+  },
+  "recordMatchConfigurationId": "56a21d9aa291020ca7dd225f",
+  "request": {
+    "id": "56a22377a2910211dbe66e38",
+    "meta": {
+      "createdOn": "2016-01-22T12:41:27.376Z"
+    },
+    "message": {
+      "id": "863e855a-cf18-46a6-bb36-6072f65c5ead",
+      "type": "message",
+      "entry": [
+        {
+          "fullUrl": "urn:uuid:75e251bb-c088-4651-bf6a-86afc412bb47",
+          "resource": {
+            "resourceType": "MessageHeader",
+            "id": "75e251bb-c088-4651-bf6a-86afc412bb47",
+            "timestamp": {
+              "time": "2016-01-22T12:41:27.375Z",
+              "precision": "timestamp"
+            },
+            "event": {
+              "system": "http://github.com/mitre/ptmatch",
+              "code": "record-match"
+            },
+            "source": {
+              "endpoint": "http://localhost:8881/Bundle"
+            },
+            "destination": [
+              {
+                "name": "Record Matcher A",
+                "endpoint": "http://somewhere.domain/fhir/msg"
+              }
+            ],
+            "data": [
+              {
+                "reference": "urn:uuid:32796243-8d20-463c-8684-afe96a832776"
+              }
+            ]
+          }
+        },
+        {
+          "fullUrl": "urn:uuid:32796243-8d20-463c-8684-afe96a832776",
+          "resource": {
+            "id": "32796243-8d20-463c-8684-afe96a832776",
+            "resourceType": "Parameters",
+            "parameter": [
+              {
+                "name": "type",
+                "valueString": "master"
+              },
+              {
+                "name": "resourceType",
+                "valueString": "Patient"
+              },
+              {
+                "name": "searchExpression",
+                "resource": {
+                  "parameter": [
+                    {
+                      "name": "resourceUrl",
+                      "valueString": "http://acme.com/popHealth/fhir/Patient"
+                    },
+                    {
+                      "name": "name",
+                      "valueString": "jon"
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        }
+      ]
+    }
+  },
+  "status": [
+    {
+      "message": "Sent",
+      "createdOn": "2016-01-22T12:41:27.377Z"
+    }
+  ]
+}

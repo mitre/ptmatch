@@ -1,0 +1,8 @@
+{
+  "id": "569408c1a291020e5b3637a4",
+  "name": "Record Matcher A",
+  "description": "an updated description to apply to sys-if-01",
+  "DestinationEndpoint": "http://somewhere.domain/fhir/msg",
+  "ResponseEndpoint" : "http://response-server.domain/fhir/msg",
+  "ServerEndpoint": "https://localhost:8882"
+}
