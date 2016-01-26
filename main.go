@@ -28,7 +28,7 @@ func main() {
 		mongoHost = "localhost"
 	}
 
-	s := server.NewServer(mongoHost, "pophealth", ":8881")
+	s := server.NewServer(mongoHost, "ptmatch", ":8881")
 
 	s.Run()
 }
