@@ -23,7 +23,6 @@ import (
 	"strings"
 	"time"
 
-	//	"github.com/parnurzeal/gorequest"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/Sirupsen/logrus"
@@ -93,10 +92,6 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 			"request":         reqMatchRequest}).Info("About to submit request")
 
 	// submit the record match request
-	//	request := gorequest.New()
-	//	request.Send(reqMatchRequest)
-	//	resp, respBody, errs := request.Put(svrEndpoint).End()
-
 	resp, err := ptm_http.Put(svrEndpoint, "application/json+fhir",
 		bytes.NewReader(reqBody))
 	if err != nil {
@@ -106,18 +101,6 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 		return err
 	}
 
-	/*
-		resp, err := http.Put(svrEndpoint, "application/json", bytes.NewReader(reqBody))
-		if errs != nil {
-			logger.Log.WithFields(
-				logrus.Fields{"method": "CreateRecordMatchRun",
-					"errs": errs}).Error("Sending Record Match Request")
-			return errs[0]
-		}
-		logger.Log.WithFields(
-			logrus.Fields{"method": "CreateRecordMatchRun",
-				"response": resp, "resp Body": respBody}).Info("Request Submission Response")
-	*/
 	// Store status, Sent, with the run object
 	recMatchRun.Status = make([]ptm_models.RecordMatchRunStatusComponent, 1)
 	recMatchRun.Status[0].CreatedOn = time.Now()
