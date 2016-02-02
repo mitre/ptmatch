@@ -26,7 +26,7 @@ type RecordMatchSystemInterface struct {
 	Description string `bson:"description,omitempty" json:"description,omitempty"`
 	// address to the record match system that will process the request
 	DestinationEndpoint string `bson:"destinationEndpoint,omitempty" json:"destinationEndpoint,omitempty"`
-	// address to the FHIR Server to which the record-match message should be posted, may be same or different from ultimate message destination
+	// address to the FHIR Server to which the record-match message should be PUT, may be same or different from ultimate message destination
 	ServerEndpoint string `bson:"serverEndpoint,omitempty" json:"serverEndpoint,omitempty"`
 	// address to which record match direct response messages
 	ResponseEndpoint string `bson:"responseEndpoint,omitempty" json:"responseEndpoint,omitempty"`

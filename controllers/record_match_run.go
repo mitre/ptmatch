@@ -20,8 +20,10 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strings"
 	"time"
 
+	//	"github.com/parnurzeal/gorequest"
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/Sirupsen/logrus"
@@ -29,10 +31,13 @@ import (
 	"github.com/satori/go.uuid"
 
 	fhir_models "github.com/intervention-engine/fhir/models"
+	ptm_http "github.com/mitre/ptmatch/http"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
+// CreateRecordMatchRun creates a new Record Match Run and constructs and
+// sends a Record Match request message.
 func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	req := ctx.Request()
 	resourceType := getResourceType(req.URL)
@@ -46,28 +51,30 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	recMatchConfigID := recMatchRun.RecordMatchConfigurationID
 	logger.Log.WithFields(
 		logrus.Fields{"method": "CreateRecordMatchRun",
-			"recMatchConfigID": recMatchConfigID}).Info("check recmatch config id")
+			"recMatchConfigID": recMatchConfigID}).Debug("check recmatch config id")
 	if !recMatchConfigID.Valid() {
 		// Bad Request: Record Match Configuration is required
 		return echo.NewHTTPError(http.StatusBadRequest, "Invalid RecordMatchConfigurationID")
 	}
+	// Retrieve the RecordMatchConfiguration specified in the run object
 	obj, err := ptm_models.LoadResource(rc.Database, "RecordMatchConfiguration", recMatchConfigID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Unable to find Record Match Configuration")
 	}
 	recMatchConfig := obj.(*ptm_models.RecordMatchConfiguration)
-	if err = validateRecordMatchConfig(recMatchConfig); err != nil {
-		return err
+	if !isValidRecordMatchConfig(recMatchConfig) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Record Match Configuration")
 	}
 
+	// Retrieve the info about the record matcher
 	obj, err = ptm_models.LoadResource(rc.Database, "RecordMatchSystemInterface",
 		recMatchConfig.RecordMatchSystemInterfaceID)
 	if err != nil {
 		return echo.NewHTTPError(http.StatusBadRequest, "Unable to find Record Match System Interface")
 	}
 	recMatchSysIface := obj.(*ptm_models.RecordMatchSystemInterface)
-	if err != nil {
-		return err
+	if !isValidRecordMatchSysIface(recMatchSysIface) {
+		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Record Match System Interface")
 	}
 
 	// construct a record match request
@@ -75,22 +82,42 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	// attach the request message to the run object
 	recMatchRun.Request = *reqMatchRequest
 
-	// Construct http request for the record match run reqMatchRequest
+	// Construct body of the http request for the record match request
 	reqBody, _ := reqMatchRequest.Message.MarshalJSON()
 
+	svrEndpoint := prepEndpoint(recMatchSysIface.ServerEndpoint, reqMatchRequest.Message.Id)
+
 	logger.Log.WithFields(
 		logrus.Fields{"method": "CreateRecordMatchRun",
-			"request": string(reqBody)}).Info("About to submit request")
+			"server endpoint": svrEndpoint,
+			"request":         reqMatchRequest}).Info("About to submit request")
 
 	// submit the record match request
-	resp, err := http.Post(recMatchSysIface.ServerEndpoint, "application/json", bytes.NewReader(reqBody))
+	//	request := gorequest.New()
+	//	request.Send(reqMatchRequest)
+	//	resp, respBody, errs := request.Put(svrEndpoint).End()
+
+	resp, err := ptm_http.Put(svrEndpoint, "application/json+fhir",
+		bytes.NewReader(reqBody))
 	if err != nil {
+		logger.Log.WithFields(
+			logrus.Fields{"method": "CreateRecordMatchRun",
+				"err": err}).Error("Sending Record Match Request")
 		return err
 	}
-	logger.Log.WithFields(
-		logrus.Fields{"method": "CreateRecordMatchRun",
-			"response": resp}).Info("Request Submission Response")
 
+	/*
+		resp, err := http.Put(svrEndpoint, "application/json", bytes.NewReader(reqBody))
+		if errs != nil {
+			logger.Log.WithFields(
+				logrus.Fields{"method": "CreateRecordMatchRun",
+					"errs": errs}).Error("Sending Record Match Request")
+			return errs[0]
+		}
+		logger.Log.WithFields(
+			logrus.Fields{"method": "CreateRecordMatchRun",
+				"response": resp, "resp Body": respBody}).Info("Request Submission Response")
+	*/
 	// Store status, Sent, with the run object
 	recMatchRun.Status = make([]ptm_models.RecordMatchRunStatusComponent, 1)
 	recMatchRun.Status[0].CreatedOn = time.Now()
@@ -116,10 +143,42 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	return ctx.JSON(http.StatusCreated, resource)
 }
 
-func validateRecordMatchConfig(recMatchConfig *ptm_models.RecordMatchConfiguration) error {
-	// TODO check that server, destination, and response endpoints are Set
-	// TODO verify that match mode corresponds to number of specified data lists (query, master)
-	return nil
+func isValidRecordMatchConfig(rmc *ptm_models.RecordMatchConfiguration) bool {
+	isValid := false
+
+	if rmc.RecordMatchSystemInterfaceID.Valid() {
+		// verify that match mode corresponds to number of specified data lists (query, master)
+		if rmc.MatchingMode == ptm_models.Deduplication {
+			isValid = rmc.MasterRecordSetID.Valid()
+		} else if rmc.MatchingMode == ptm_models.Query {
+			isValid = rmc.MasterRecordSetID.Valid() && rmc.QueryRecordSetID.Valid()
+		}
+	}
+
+	return isValid
+}
+
+func isValidRecordMatchSysIface(rmsi *ptm_models.RecordMatchSystemInterface) bool {
+	isValid := false
+
+	// check that server, destination, and response endpoints are Set
+	// TODO check that server, destination, and response endpoint values seem reasonable
+	if rmsi.DestinationEndpoint != "" &&
+		rmsi.ServerEndpoint != "" && rmsi.ResponseEndpoint != "" {
+		isValid = true
+	}
+	return isValid
+}
+
+func prepEndpoint(baseURL, id string) string {
+	result := baseURL
+
+	if !strings.HasSuffix(baseURL, "/") {
+		result += "/"
+	}
+	result += id
+
+	return result
 }
 
 func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
@@ -127,7 +186,8 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 
 	req := &ptm_models.RecordMatchRequest{ID: bson.NewObjectId()}
 	req.Message = &fhir_models.Bundle{}
-	req.Message.Id = uuid.NewV4().String()
+	// 2/2016 - Intervention Engine FHIR Server only supports Hex bson ObjectID for Id
+	req.Message.Id = bson.NewObjectId().Hex()
 	req.Message.Type = "message"
 
 	// deduplication has 2 entries (hdr +_one data); query has 3 (hdr + 2 data)
@@ -159,7 +219,7 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 	logger.Log.WithFields(
 		logrus.Fields{"method": "NewRecordMatchRequest",
 			"match mode":  recMatchConfig.MatchingMode,
-			"num entries": numEntries}).Info("")
+			"num entries": numEntries}).Debug("")
 
 	return req
 }
@@ -188,7 +248,7 @@ func (rc *ResourceController) newMessageHeader(
 
 	msgHdr.Timestamp = &fhir_models.FHIRDateTime{Time: time.Now(), Precision: fhir_models.Timestamp}
 
-	// TODO Remove when working
+	// TODO Remove MarshalJSON() and Log calls when working
 	buf, _ := msgHdr.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "newMessageHeader",

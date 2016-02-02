@@ -4,5 +4,5 @@
   "description": "descriptive remarks that pertain to this record matcher interface",
   "DestinationEndpoint": "http://somewhere.domain/fhir/msg",
   "ResponseEndpoint" : "http://response-server.domain/fhir/msg",
-  "ServerEndpoint": "http://localhost:8882"
+  "ServerEndpoint": "http://localhost:8881"
 }

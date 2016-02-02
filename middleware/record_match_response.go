@@ -29,6 +29,9 @@ import (
 	fhir_models "github.com/intervention-engine/fhir/models"
 )
 
+// ProcessFhirResource invokes a function associated with a FHIR
+// Resource.  The registered function is invoked after the Context
+// handler returns.
 func ProcessFhirResource(db *mgo.Database) echo.MiddlewareFunc {
 	return func(hf echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx *echo.Context) error {

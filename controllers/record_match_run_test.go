@@ -24,6 +24,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/mitre/ptmatch/logger"
+
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
@@ -50,23 +51,32 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 
 	// Set up the database
 	if mongoSession, err = mgo.Dial(s.DatabaseHost); err != nil {
+		logger.Log.Error("Cannot connect to MongoDB. Is service running?")
 		panic(err)
 	}
+	c.Assert(mongoSession, NotNil)
 
 	database = mongoSession.DB(s.DatabaseName)
+	c.Assert(database, NotNil)
 
 	controller = ResourceController{}
 	controller.Database = database
 }
 
 func (s *ServerSuite) TearDownTest(c *C) {
-	database.C("recordMatchConfigurations").DropCollection()
-	database.C("recordMatchSystemInterfaces").DropCollection()
+	if database != nil {
+		database.C("recordMatchConfigurations").DropCollection()
+		database.C("recordMatchSystemInterfaces").DropCollection()
+	}
 }
 
 func (s *ServerSuite) TearDownSuite(c *C) {
-	database.DropDatabase()
-	mongoSession.Close()
+	if database != nil {
+		database.DropDatabase()
+	}
+	if mongoSession != nil {
+		mongoSession.Close()
+	}
 }
 
 func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
@@ -90,14 +100,14 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 
 	// Build a record match run
 	// construct a record match request
-	req := controller.newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchConfig)
+	req := controller.newRecordMatchRequest("http://localhost/fhir", recMatchConfig)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchDedupRequest",
 			"request": string(buf)}).Info("")
 	c.Assert(req, NotNil)
 	c.Assert(req.Message.Type, Equals, "message")
-	c.Assert(len(req.Message.Entry), Equals, 2)
+	c.Assert(len(req.Message.Entry), Equals, 2) //MsgHdr + Param`
 }
 
 func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
@@ -135,9 +145,11 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 			"request": string(buf)}).Info("")
 	c.Assert(req, NotNil)
 	c.Assert(req.Message.Type, Equals, "message")
-	c.Assert(len(req.Message.Entry), Equals, 3)
+	c.Assert(len(req.Message.Entry), Equals, 3) //MsgHdr + two Param`
 }
 
+// TestNewMessageHeader tests that a MessageHeader for a record-match
+// request is constructed from information in a RecordMatchConfiguration object.
 func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	c.Assert(controller.Database, NotNil)
 	// Insert a record match system interface to the DB
@@ -154,6 +166,9 @@ func (s *ServerSuite) TestNewMessageHeader(c *C) {
 
 	// Build a record match run
 	// construct a record match request
-	msgHdr, _ := controller.newMessageHeader("http://replace.me/with/selurl/global", recMatchConfig)
+	src := "http://replace.me/with/selurl/global"
+	msgHdr, _ := controller.newMessageHeader(src, recMatchConfig)
 	c.Assert(msgHdr, NotNil)
+	c.Assert(msgHdr.Source.Endpoint, Equals, src)
+	c.Assert(msgHdr.Event.Code, Equals, "record-match")
 }
