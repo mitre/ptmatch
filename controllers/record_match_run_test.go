@@ -43,7 +43,7 @@ type ServerSuite struct {
 // Hook up gocheck into the "go test" runner.
 func Test(t *testing.T) { TestingT(t) }
 
-var _ = Suite(&ServerSuite{"localhost", "pophealth-test", ":8882"})
+var _ = Suite(&ServerSuite{"localhost", "ptmatch-test", ":8882"})
 
 // runs once
 func (s *ServerSuite) SetUpSuite(c *C) {
