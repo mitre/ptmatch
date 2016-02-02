@@ -29,107 +29,148 @@ import (
 	fhir_models "github.com/intervention-engine/fhir/models"
 )
 
-// ProcessFhirResource invokes a function associated with a FHIR
-// Resource.  The registered function is invoked after the Context
-// handler returns.
-func ProcessFhirResource(db *mgo.Database) echo.MiddlewareFunc {
+func PostProcessRecordMatchResponse(db *mgo.Database) echo.MiddlewareFunc {
 	return func(hf echo.HandlerFunc) echo.HandlerFunc {
 		return func(ctx *echo.Context) error {
+			logger.Log.Info("PostProcessRecordMatchResponse: Before calling handler")
 			err := hf(ctx)
 			if err != nil {
 				return err
 			}
 			resourceType := ctx.Get("Resource")
-			if resourceType != nil {
+
+			logger.Log.WithFields(logrus.Fields{"func": "PostProcessRecordMatchResponse",
+				"method":       ctx.Request().Method,
+				"resourceType": resourceType}).Info("check resource type exists")
+
+			if resourceType.(string) == "Bundle" &&
+				ctx.Request().Method == "PUT" || ctx.Request().Method == "POST" {
 				resource := ctx.Get(resourceType.(string))
-				handleResource(db, resource)
+				updateRecordMatchRun(db, resource.(*fhir_models.Bundle))
 			}
 			return nil
 		}
 	}
 }
 
-func handleResource(db *mgo.Database, resource interface{}) error {
-	logger.Log.WithFields(logrus.Fields{"func": "handleResponseMessage",
-		"resource": resource}).Info("Entering")
+/*
+func handleResponseBundle(db *mgo.Database, b *fhir_models.Bundle) error {
+	// Verify this bundle represents a message
+	if b.Type == "message" {
+		// we care only about response messages
+		msgHdr := b.Entry[0].Resource.(*fhir_models.MessageHeader)
+		resp := msgHdr.Response
 
-	switch r := resource.(type) {
-	case *fhir_models.Bundle:
-		// Verify this bundle represents a message
-		if r.Type == "message" {
-			// we care only about response messages
-			msgHdr := r.Entry[0].Resource.(*fhir_models.MessageHeader)
-			resp := msgHdr.Response
-			logger.Log.WithFields(logrus.Fields{"func": "handleResponseMessage",
-				"msg hdr": msgHdr}).Info("Recognized Bundle of type, message")
-			// verify this is a response for a record-match request
-			if resp != nil &&
-				msgHdr.Event.Code == "record-match" &&
-				msgHdr.Event.System == "http://github.com/mitre/ptmatch/fhir/message-events" {
+		logger.Log.WithFields(logrus.Fields{"func": "handleResponseBundle",
+			"msg hdr": msgHdr}).Info("Recognized Bundle of type, message")
 
-				logger.Log.WithFields(logrus.Fields{"func": "handleResponseMessage",
-					"resp ID": resp.Identifier}).Info("About to update recmatch run")
+		// verify this is a response for a record-match request
+		if resp != nil &&
+			msgHdr.Event.Code == "record-match" &&
+			msgHdr.Event.System == "http://github.com/mitre/ptmatch/fhir/message-events" {
 
-				// Find the record match run object w/ the record-match request w/ the id in the response
-				err := updateRecordMatchRun(db, resp.Identifier, resource.(*fhir_models.Bundle))
-				if err != nil {
-					return err
-				}
+			// Find the record match run object w/ the record-match request w/ the id in the response
+			err := updateRecordMatchRun(db, resp.Identifier, b)
+			if err != nil {
+				return err
 			}
 		}
-		return nil
-	default:
-		return nil
 	}
+	return nil
 }
+*/
+func updateRecordMatchRun(db *mgo.Database, respMsg *fhir_models.Bundle) error {
+	// Verify this bundle represents a message
+	if respMsg.Type == "message" {
+		// we care only about response messages
+		msgHdr := respMsg.Entry[0].Resource.(*fhir_models.MessageHeader)
+		resp := msgHdr.Response
 
-func updateRecordMatchRun(db *mgo.Database, reqID string, respMsg *fhir_models.Bundle) error {
-	resourceType := "RecordMatchRun"
-	// Determine the collection expected to hold the resource
-	c := db.C(ptm_models.GetCollectionName(resourceType))
-	recMatchRun := ptm_models.NewStructForResourceName(resourceType).(*ptm_models.RecordMatchRun)
-	err := c.Find(bson.M{"request.message.entry.resource._id": reqID}).One(recMatchRun)
-	if err != nil {
-		logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
-			"request msg id": reqID}).Warn("Unable to find RecMatchRun assoc w. request")
-		return err
-	}
-	logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
-		"result": recMatchRun}).Info("found run assoc w. request")
+		logger.Log.WithFields(logrus.Fields{"func": "handleResponseBundle",
+			"msg hdr": msgHdr}).Info("Recognized Bundle of type, message")
 
-	now := time.Now()
-	respID := bson.NewObjectId()
+		// verify this is a response for a record-match request
+		if resp != nil &&
+			msgHdr.Event.Code == "record-match" &&
+			msgHdr.Event.System == "http://github.com/mitre/ptmatch/fhir/message-events" {
 
-	// Add the record match response to the record run data
-	err = c.UpdateId(recMatchRun.ID,
-		bson.M{"$push": bson.M{"responses": bson.M{
-			"_id":        respID,
-			"meta":       bson.M{"lastUpdatedOn": now, "createdOn": now},
-			"receivedOn": now,
-			"message":    respMsg,
-		}}})
+			reqID := resp.Identifier
+			// Determine the collection expected to hold the resource
+			c := db.C(ptm_models.GetCollectionName("RecordMatchRun"))
+			recMatchRun := &ptm_models.RecordMatchRun{}
 
-	if err != nil {
-		logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
-			"rec match run ID": recMatchRun.ID,
-			"error":            err}).Warn("Error adding response to run")
-		return err
-	}
+			err := c.Find(
+				bson.M{"request.message.entry.resource._id": reqID}).One(recMatchRun)
+			if err != nil {
+				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+					"err":            err,
+					"request msg id": reqID}).Warn("Unable to find RecMatchRun assoc w. request")
+				return err
+			}
+			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+				"result": recMatchRun}).Info("found run assoc w. request")
 
-	// Add an entry to the record match run status and update lastUpdatedOn
-	err = c.UpdateId(recMatchRun.ID,
-		bson.M{
-			"$currentDate": bson.M{"meta.lastUpdatedOn": bson.M{"$type": "timestamp"}},
-			"$push": bson.M{
-				"status": bson.M{
-					"message":   "Response Received",
-					"createdOn": now}}})
+			now := time.Now()
 
-	if err != nil {
-		logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
-			"rec match run ID": recMatchRun.ID,
-			"error":            err}).Warn("Error updating response status in run object")
-		return err
+			// check that the response is already assoc. w/ the record match run object
+			count, err := c.Find(bson.M{"_id": recMatchRun.ID,
+				"responses.message._id": respMsg.Id}).Count()
+
+			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+				"count": count}).Info("look for dupl response")
+
+			if count > 0 {
+				// The response message has been processed before
+				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+					"record match run": recMatchRun.ID,
+					"response msg Id":  respMsg.Id}).Info("record match response seen before")
+
+				// Record that we've seen this response before
+				err = c.UpdateId(recMatchRun.ID,
+					bson.M{
+						"$currentDate": bson.M{"meta.lastUpdatedOn": bson.M{"$type": "timestamp"}},
+						"$push": bson.M{
+							"status": bson.M{
+								"message":   "Duplicate Response Received and Ignored [" + respMsg.Id + "]",
+								"createdOn": now}}})
+
+				return nil
+			}
+
+			respID := bson.NewObjectId()
+
+			// Add the record match response to the record run data
+			err = c.UpdateId(recMatchRun.ID,
+				bson.M{"$push": bson.M{"responses": bson.M{
+					"_id":        respID,
+					"meta":       bson.M{"lastUpdatedOn": now, "createdOn": now},
+					"receivedOn": now,
+					"message":    respMsg,
+				}}})
+
+			if err != nil {
+				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+					"rec match run ID": recMatchRun.ID,
+					"error":            err}).Warn("Error adding response to Run Info")
+				return err
+			}
+
+			// Add an entry to the record match run status and update lastUpdatedOn
+			err = c.UpdateId(recMatchRun.ID,
+				bson.M{
+					"$currentDate": bson.M{"meta.lastUpdatedOn": bson.M{"$type": "timestamp"}},
+					"$push": bson.M{
+						"status": bson.M{
+							"message":   "Response Received [" + respMsg.Id + "]",
+							"createdOn": now}}})
+
+			if err != nil {
+				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
+					"rec match run ID": recMatchRun.ID,
+					"error":            err}).Warn("Error updating response status in run object")
+				return err
+			}
+		}
 	}
 	return nil
 }

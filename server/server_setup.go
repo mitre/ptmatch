@@ -18,6 +18,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/Sirupsen/logrus"
 	"github.com/labstack/echo"
 	emw "github.com/labstack/echo/middleware"
 	"github.com/thoas/stats"
@@ -26,6 +27,7 @@ import (
 	logger "github.com/mitre/ptmatch/logger"
 	mw "github.com/mitre/ptmatch/middleware"
 
+	fhir_search "github.com/intervention-engine/fhir/search"
 	fhir_svr "github.com/intervention-engine/fhir/server"
 
 	"gopkg.in/mgo.v2"
@@ -38,7 +40,8 @@ type RecMatchServer struct {
 }
 
 func (svr *RecMatchServer) AddMiddleware(key string, middleware echo.Middleware) {
-	svr.FhirSvr.MiddlewareConfig[key] = append(svr.FhirSvr.MiddlewareConfig[key], middleware)
+	svr.FhirSvr.AddMiddleware(key, middleware)
+	//	svr.FhirSvr.MiddlewareConfig[key] = append(svr.FhirSvr.MiddlewareConfig[key], middleware)
 }
 
 func (svr *RecMatchServer) DatabaseHost() string {
@@ -63,11 +66,7 @@ func NewServer(databaseHost string, dbName string, listenPort string) *RecMatchS
 
 	svr := &RecMatchServer{DatabaseName: dbName, ListenPort: listenPort}
 
-	svr.FhirSvr = &fhir_svr.FHIRServer{DatabaseHost: databaseHost,
-		MiddlewareConfig: make(map[string][]echo.Middleware)}
-
-	// create echo http routing framework instance
-	svr.FhirSvr.Echo = echo.New()
+	svr.FhirSvr = fhir_svr.NewServer(databaseHost)
 
 	return svr
 }
@@ -84,8 +83,19 @@ func (svr *RecMatchServer) Run() {
 
 	fhir_svr.Database = fhir_svr.MongoSession.DB(svr.DatabaseName)
 
+	logger.Log.WithFields(
+		logrus.Fields{"method": "Run",
+			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("before set")
+
 	registerMiddleware(svr)
 	registerRoutes(svr)
+	logger.Log.WithFields(
+		logrus.Fields{"method": "Run",
+			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("mware set?")
+
+	fhir_svr.RegisterRoutes(svr.FhirSvr.Echo, svr.FhirSvr.MiddlewareConfig)
+
+	//	updateSearchParamDictionary()
 
 	svr.Router().Run(svr.ListenPort)
 }
@@ -98,7 +108,7 @@ func registerMiddleware(svr *RecMatchServer) {
 	//------------------------
 	// Third-party middleware
 	//------------------------
-	// https://github.com/thoas/stats
+	// See https://github.com/thoas/stats
 	s := stats.New()
 	svr.Router().Use(s.Handler)
 	// Route
@@ -108,8 +118,9 @@ func registerMiddleware(svr *RecMatchServer) {
 	})
 
 	//echoSvr.Use(emw.AllowOrigin("*"))
+	recMatchWatch := mw.PostProcessRecordMatchResponse(fhir_svr.Database)
 
-	recMatchWatch := mw.ProcessFhirResource(fhir_svr.Database)
+	//	recMatchWatch := mw.PostProcessFhirResource("PUT", fhir_svr.Database)
 	svr.AddMiddleware("Bundle", recMatchWatch)
 
 }
@@ -137,6 +148,17 @@ func registerRoutes(svr *RecMatchServer) {
 	svr.Router().Post("/"+name, controller.CreateRecordMatchRun)
 	svr.Router().Put("/"+name+"/:id", controller.UpdateResource)
 	svr.Router().Delete("/"+name+"/:id", controller.DeleteResource)
+}
+
+func updateSearchParamDictionary() {
+	// add mapping of search term to
+	msgParamInfo := fhir_search.SearchParameterDictionary["Bundle"]["message"]
+
+	msgParamInfo.Paths = []fhir_search.SearchParamPath{
+		fhir_search.SearchParamPath{Path: "[]entry.resource", Type: "MessageHeader"},
+	}
+	// a copy is returned above; put the update back in the map
+	fhir_search.SearchParameterDictionary["Bundle"]["message"] = msgParamInfo
 }
 
 func welcome(c *echo.Context) error {
