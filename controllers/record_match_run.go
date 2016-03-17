@@ -35,21 +35,21 @@ import (
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
-// CreateRecordMatchRun creates a new Record Match Run and constructs and
+// CreateRecordMatchJob creates a new Record Match Job and constructs and
 // sends a Record Match request message.
-func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
+func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 	req := ctx.Request()
 	resourceType := getResourceType(req.URL)
 	obj := ptm_models.NewStructForResourceName(resourceType)
-	recMatchRun := obj.(*ptm_models.RecordMatchRun)
-	if err := ctx.Bind(recMatchRun); err != nil {
+	recMatchJob := obj.(*ptm_models.RecordMatchJob)
+	if err := ctx.Bind(recMatchJob); err != nil {
 		return err
 	}
 
 	// retrieve and validate the record match configuration
-	recMatchConfigID := recMatchRun.RecordMatchConfigurationID
+	recMatchConfigID := recMatchJob.RecordMatchConfigurationID
 	logger.Log.WithFields(
-		logrus.Fields{"method": "CreateRecordMatchRun",
+		logrus.Fields{"method": "CreateRecordMatchJob",
 			"recMatchConfigID": recMatchConfigID}).Debug("check recmatch config id")
 	if !recMatchConfigID.Valid() {
 		// Bad Request: Record Match Configuration is required
@@ -79,7 +79,7 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	// construct a record match request
 	reqMatchRequest := rc.newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchConfig)
 	// attach the request message to the run object
-	recMatchRun.Request = *reqMatchRequest
+	recMatchJob.Request = *reqMatchRequest
 
 	// Construct body of the http request for the record match request
 	reqBody, _ := reqMatchRequest.Message.MarshalJSON()
@@ -87,7 +87,7 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 	svrEndpoint := prepEndpoint(recMatchSysIface.ServerEndpoint, reqMatchRequest.Message.Id)
 
 	logger.Log.WithFields(
-		logrus.Fields{"method": "CreateRecordMatchRun",
+		logrus.Fields{"method": "CreateRecordMatchJob",
 			"server endpoint": svrEndpoint,
 			"request":         reqMatchRequest}).Info("About to submit request")
 
@@ -96,23 +96,23 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *echo.Context) error {
 		bytes.NewReader(reqBody))
 	if err != nil {
 		logger.Log.WithFields(
-			logrus.Fields{"method": "CreateRecordMatchRun",
+			logrus.Fields{"method": "CreateRecordMatchJob",
 				"err": err}).Error("Sending Record Match Request")
 		return err
 	}
 
 	// Store status, Sent, with the run object
-	recMatchRun.Status = make([]ptm_models.RecordMatchRunStatusComponent, 1)
-	recMatchRun.Status[0].CreatedOn = time.Now()
+	recMatchJob.Status = make([]ptm_models.RecordMatchJobStatusComponent, 1)
+	recMatchJob.Status[0].CreatedOn = time.Now()
 	// if a success code was received
 	if resp.StatusCode >= 200 && resp.StatusCode < 300 {
-		recMatchRun.Status[0].Message = "Request Sent [" + resp.Status + "]"
+		recMatchJob.Status[0].Message = "Request Sent [" + resp.Status + "]"
 	} else {
-		recMatchRun.Status[0].Message = "Error Sending Request to Record Matcher [" + resp.Status + "]"
+		recMatchJob.Status[0].Message = "Error Sending Request to Record Matcher [" + resp.Status + "]"
 	}
 
 	// Persist the record match run
-	resource, err := ptm_models.PersistResource(rc.Database, resourceType, recMatchRun)
+	resource, err := ptm_models.PersistResource(rc.Database, resourceType, recMatchJob)
 	if err != nil {
 		return err
 	}

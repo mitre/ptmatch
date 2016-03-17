@@ -27,7 +27,6 @@ import (
 	logger "github.com/mitre/ptmatch/logger"
 	mw "github.com/mitre/ptmatch/middleware"
 
-	fhir_search "github.com/intervention-engine/fhir/search"
 	fhir_svr "github.com/intervention-engine/fhir/server"
 
 	"gopkg.in/mgo.v2"
@@ -95,8 +94,6 @@ func (svr *RecMatchServer) Run() {
 
 	fhir_svr.RegisterRoutes(svr.FhirSvr.Echo, svr.FhirSvr.MiddlewareConfig)
 
-	//	updateSearchParamDictionary()
-
 	svr.Router().Run(svr.ListenPort)
 }
 
@@ -122,7 +119,6 @@ func registerMiddleware(svr *RecMatchServer) {
 
 	//	recMatchWatch := mw.PostProcessFhirResource("PUT", fhir_svr.Database)
 	svr.AddMiddleware("Bundle", recMatchWatch)
-
 }
 
 func registerRoutes(svr *RecMatchServer) {
@@ -142,23 +138,12 @@ func registerRoutes(svr *RecMatchServer) {
 		svr.Router().Delete("/"+name+"/:id", controller.DeleteResource)
 	}
 
-	name := "RecordMatchRun"
+	name := "RecordMatchJob"
 	svr.Router().Get("/"+name, controller.GetResources)
 	svr.Router().Get("/"+name+"/:id", controller.GetResource)
-	svr.Router().Post("/"+name, controller.CreateRecordMatchRun)
+	svr.Router().Post("/"+name, controller.CreateRecordMatchJob)
 	svr.Router().Put("/"+name+"/:id", controller.UpdateResource)
 	svr.Router().Delete("/"+name+"/:id", controller.DeleteResource)
-}
-
-func updateSearchParamDictionary() {
-	// add mapping of search term to
-	msgParamInfo := fhir_search.SearchParameterDictionary["Bundle"]["message"]
-
-	msgParamInfo.Paths = []fhir_search.SearchParamPath{
-		fhir_search.SearchParamPath{Path: "[]entry.resource", Type: "MessageHeader"},
-	}
-	// a copy is returned above; put the update back in the map
-	fhir_search.SearchParameterDictionary["Bundle"]["message"] = msgParamInfo
 }
 
 func welcome(c *echo.Context) error {

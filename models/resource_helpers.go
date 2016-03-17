@@ -59,8 +59,8 @@ func StructForResourceName(name string) interface{} {
 		return RecordMatchRequest{}
 	case "RecordMatchResponse":
 		return RecordMatchResponse{}
-	case "RecordMatchRun":
-		return RecordMatchRun{}
+	case "RecordMatchJob":
+		return RecordMatchJob{}
 	case "RecordMatchSystemInterface":
 		return RecordMatchSystemInterface{}
 	case "RecordSet":
