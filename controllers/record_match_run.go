@@ -156,8 +156,17 @@ func isValidRecordMatchSysIface(rmsi *ptm_models.RecordMatchSystemInterface) boo
 func prepEndpoint(baseURL, id string) string {
 	result := baseURL
 
+	// if server base doesn't end in/
 	if !strings.HasSuffix(baseURL, "/") {
-		result += "/"
+		if !strings.HasSuffix(baseURL, "/Bundle") {
+			result += "/Bundle/"
+		} else {
+			result += "/"
+		}
+	} else {
+		if !strings.HasSuffix(baseURL, "/Bundle/") {
+			result += "Bundle/"
+		}
 	}
 	result += id
 
@@ -227,7 +236,9 @@ func (rc *ResourceController) newMessageHeader(
 	msgHdr.Destination[0].Name = recMatchSysIface.Name
 	msgHdr.Destination[0].Endpoint = recMatchSysIface.DestinationEndpoint
 
-	msgHdr.Event = &fhir_models.Coding{System: "http://github.com/mitre/ptmatch", Code: "record-match"}
+	msgHdr.Event = &fhir_models.Coding{
+		System: "http://github.com/mitre/ptmatch/fhir/message-events",
+		Code:   "record-match"}
 
 	msgHdr.Timestamp = &fhir_models.FHIRDateTime{Time: time.Now(), Precision: fhir_models.Timestamp}
 

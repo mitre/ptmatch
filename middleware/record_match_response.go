@@ -54,32 +54,6 @@ func PostProcessRecordMatchResponse(db *mgo.Database) echo.MiddlewareFunc {
 	}
 }
 
-/*
-func handleResponseBundle(db *mgo.Database, b *fhir_models.Bundle) error {
-	// Verify this bundle represents a message
-	if b.Type == "message" {
-		// we care only about response messages
-		msgHdr := b.Entry[0].Resource.(*fhir_models.MessageHeader)
-		resp := msgHdr.Response
-
-		logger.Log.WithFields(logrus.Fields{"func": "handleResponseBundle",
-			"msg hdr": msgHdr}).Info("Recognized Bundle of type, message")
-
-		// verify this is a response for a record-match request
-		if resp != nil &&
-			msgHdr.Event.Code == "record-match" &&
-			msgHdr.Event.System == "http://github.com/mitre/ptmatch/fhir/message-events" {
-
-			// Find the record match run object w/ the record-match request w/ the id in the response
-			err := updateRecordMatchJob(db, resp.Identifier, b)
-			if err != nil {
-				return err
-			}
-		}
-	}
-	return nil
-}
-*/
 func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 	// Verify this bundle represents a message
 	if respMsg.Type == "message" {
