@@ -42,7 +42,7 @@ type RecordMatchConfiguration struct {
 	RecordMatchSystemInterfaceID bson.ObjectId `bson:"recordMatchSystemInterfaceId,omitempty" json:"recordMatchSystemInterfaceId,omitempty"`
 	MasterRecordSetID            bson.ObjectId `bson:"masterRecordSetId,omitempty" json:"masterRecordSetId,omitempty"`
 	QueryRecordSetID             bson.ObjectId `bson:"queryRecordSetId,omitempty" json:"queryRecordSetId,omitempty"`
-	//RecordMatchRuns []bson.ObjectId `bson:"recordMatchRuns,omitempty" json:"recordMatchRuns,omitempty" json:"recordMatchRuns,omitempty"`
+	//RecordMatchJobs []bson.ObjectId `bson:"recordMatchJobs,omitempty" json:"recordMatchJobs,omitempty" json:"recordMatchJobs,omitempty"`
 }
 
 // MarshalJSON - custom marshaller to add the resourceType property, as required by the specification

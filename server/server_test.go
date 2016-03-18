@@ -31,6 +31,7 @@ import (
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 
+	fhir_search "github.com/intervention-engine/fhir/search"
 	fhir_svr "github.com/intervention-engine/fhir/server"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
@@ -49,16 +50,17 @@ var _ = Suite(&ServerSuite{})
 func (s *ServerSuite) SetUpSuite(c *C) {
 	var err error
 
-	s.Server = NewServer("localhost", "recmatch-test", ":8882")
+	s.Server = NewServer("localhost", "ptmatch-test", ":8882")
 
 	var mongoSession *mgo.Session
 	// Set up the database
 	if mongoSession, err = mgo.Dial(s.Server.DatabaseHost()); err != nil {
+		logger.Log.Error("Cannot connect to MongoDB. Is service running?")
 		panic(err)
 	}
+	c.Assert(mongoSession, NotNil)
 
 	fhir_svr.MongoSession = mongoSession
-	//	database = mongoSession.DB(s.Server.DatabaseName)
 	SetDatabase(fhir_svr.MongoSession.DB(s.Server.DatabaseName))
 
 	registerMiddleware(s.Server)
@@ -73,16 +75,22 @@ func (s *ServerSuite) SetUpTest(c *C) {
 
 func (s *ServerSuite) TearDownTest(c *C) {
 	/*
-		Database().C("recordMatchConfigurations").DropCollection()
-		Database().C("recordMatchSystemInterfaces").DropCollection()
-		Database().C("recordMatchSets").DropCollection()
-		Database().C("recordMatchRuns").DropCollection()
+			if Database() != nil {
+			Database().C("recordMatchConfigurations").DropCollection()
+			Database().C("recordMatchSystemInterfaces").DropCollection()
+			Database().C("recordMatchSets").DropCollection()
+			Database().C("recordMatchJobs").DropCollection()
+		}
 	*/
 }
 
 func (s *ServerSuite) TearDownSuite(c *C) {
-	//	Database().DropDatabase()
-	fhir_svr.MongoSession.Close()
+	if Database() != nil {
+		//	Database().DropDatabase()
+	}
+	if fhir_svr.MongoSession != nil {
+		fhir_svr.MongoSession.Close()
+	}
 }
 
 func (s *ServerSuite) TestEchoRoutes(c *C) {
@@ -317,6 +325,20 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 	// Verify the resource was deleted
 	code, body = request(echo.GET, path, nil, "", e)
 	c.Assert(code, Equals, http.StatusNotFound)
+}
+
+func (s *ServerSuite) TestUpdateSearchParamDictionary(c *C) {
+	updateSearchParamDictionary()
+
+	// verify that above call resulted in expected changes
+	msgParamInfo := fhir_search.SearchParameterDictionary["Bundle"]["message"]
+	c.Assert(msgParamInfo, NotNil)
+	c.Assert(msgParamInfo.Paths, NotNil)
+
+	logger.Log.WithFields(logrus.Fields{"func": "TestUpdateSearchParamDictionary",
+		"msgParamInfo": msgParamInfo}).Info("")
+
+	c.Assert(msgParamInfo.Paths[0].Path, Equals, "[]entry.resource")
 }
 
 func request(method, path string, body io.Reader, ct string, e *echo.Echo) (int, string) {

@@ -22,16 +22,16 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type RecordMatchRun struct {
+type RecordMatchJob struct {
 	ID                         bson.ObjectId                   `bson:"_id,omitempty" json:"id,omitempty"`
 	Meta                       *Meta                           `bson:"meta,omitempty" json:"meta,omitempty"`
 	RecordMatchConfigurationID bson.ObjectId                   `bson:"recordMatchConfigurationId,omitempty" json:"recordMatchConfigurationId,omitempty"`
 	Request                    RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
 	Responses                  []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
-	Status                     []RecordMatchRunStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
+	Status                     []RecordMatchJobStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
 }
 
-type RecordMatchRunStatusComponent struct {
+type RecordMatchJobStatusComponent struct {
 	Message   string    `bson:"message" json:"message"`
 	CreatedOn time.Time `bson:"createdOn,omitempty" json:"createdOn,omitempty"`
 }
