@@ -91,6 +91,7 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 			"server endpoint": svrEndpoint,
 			"request":         reqMatchRequest}).Info("About to submit request")
 
+	reqMatchRequest.SubmittedOn = time.Now()
 	// submit the record match request
 	resp, err := ptm_http.Put(svrEndpoint, "application/json+fhir",
 		bytes.NewReader(reqBody))
