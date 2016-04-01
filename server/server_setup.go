@@ -19,8 +19,7 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/labstack/echo"
-	emw "github.com/labstack/echo/middleware"
+	"github.com/gin-gonic/gin"
 	"github.com/thoas/stats"
 
 	rc "github.com/mitre/ptmatch/controllers"
@@ -38,7 +37,7 @@ type RecMatchServer struct {
 	FhirSvr      *fhir_svr.FHIRServer
 }
 
-func (svr *RecMatchServer) AddMiddleware(key string, middleware echo.Middleware) {
+func (svr *RecMatchServer) AddMiddleware(key string, middleware gin.HandlerFunc) {
 	svr.FhirSvr.AddMiddleware(key, middleware)
 	//	svr.FhirSvr.MiddlewareConfig[key] = append(svr.FhirSvr.MiddlewareConfig[key], middleware)
 }
@@ -47,8 +46,8 @@ func (svr *RecMatchServer) DatabaseHost() string {
 	return svr.FhirSvr.DatabaseHost
 }
 
-func (svr *RecMatchServer) Router() *echo.Echo {
-	return svr.FhirSvr.Echo
+func (svr *RecMatchServer) Router() *gin.Engine {
+	return svr.FhirSvr.Engine
 }
 
 func Database() *mgo.Database {
@@ -71,17 +70,6 @@ func NewServer(databaseHost string, dbName string, listenPort string) *RecMatchS
 }
 
 func (svr *RecMatchServer) Run() {
-	var err error
-
-	// Setup the database
-	if fhir_svr.MongoSession, err = mgo.Dial(svr.DatabaseHost()); err != nil {
-		panic(err)
-	}
-	logger.Log.Info("Connected to mongodb")
-	defer fhir_svr.MongoSession.Close()
-
-	fhir_svr.Database = fhir_svr.MongoSession.DB(svr.DatabaseName)
-
 	logger.Log.WithFields(
 		logrus.Fields{"method": "Run",
 			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("before set")
@@ -92,29 +80,27 @@ func (svr *RecMatchServer) Run() {
 		logrus.Fields{"method": "Run",
 			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("mware set?")
 
-	fhir_svr.RegisterRoutes(svr.FhirSvr.Echo, svr.FhirSvr.MiddlewareConfig)
-
-	svr.Router().Run(svr.ListenPort)
+	svr.FhirSvr.Run(fhir_svr.Config{})
 }
 
 func registerMiddleware(svr *RecMatchServer) {
-	svr.Router().Use(emw.Logger())
-	svr.Router().Use(emw.Recover())
-	svr.Router().Use(emw.Gzip())
 
 	//------------------------
 	// Third-party middleware
 	//------------------------
 	// See https://github.com/thoas/stats
 	s := stats.New()
-	svr.Router().Use(s.Handler)
+	svr.FhirSvr.Engine.Use(func(ctx *gin.Context) {
+		beginning, recorder := s.Begin(ctx.Writer)
+		ctx.Next()
+		s.End(beginning, recorder)
+	})
 	// Route
-	svr.Router().Get("/stats", func(c *echo.Context) error {
+	svr.FhirSvr.Engine.GET("/stats", func(c *gin.Context) {
 		logger.Log.Info("In stats")
-		return c.JSON(http.StatusOK, s.Data())
+		c.JSON(http.StatusOK, s.Data())
 	})
 
-	//echoSvr.Use(emw.AllowOrigin("*"))
 	recMatchWatch := mw.PostProcessRecordMatchResponse(fhir_svr.Database)
 
 	//	recMatchWatch := mw.PostProcessFhirResource("PUT", fhir_svr.Database)
@@ -122,30 +108,30 @@ func registerMiddleware(svr *RecMatchServer) {
 }
 
 func registerRoutes(svr *RecMatchServer) {
-	svr.Router().Get("/", welcome)
+	svr.FhirSvr.Engine.GET("/", welcome)
 
 	controller := rc.ResourceController{}
-	controller.Database = Database()
+	controller.DatabaseProvider = Database
 
 	resourceNames := []string{"RecordMatchConfiguration",
 		"RecordMatchSystemInterface", "RecordSet"}
 
 	for _, name := range resourceNames {
-		svr.Router().Get("/"+name, controller.GetResources)
-		svr.Router().Get("/"+name+"/:id", controller.GetResource)
-		svr.Router().Post("/"+name, controller.CreateResource)
-		svr.Router().Put("/"+name+"/:id", controller.UpdateResource)
-		svr.Router().Delete("/"+name+"/:id", controller.DeleteResource)
+		svr.FhirSvr.Engine.GET("/"+name, controller.GetResources)
+		svr.FhirSvr.Engine.GET("/"+name+"/:id", controller.GetResource)
+		svr.FhirSvr.Engine.POST("/"+name, controller.CreateResource)
+		svr.FhirSvr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
+		svr.FhirSvr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 	}
 
 	name := "RecordMatchJob"
-	svr.Router().Get("/"+name, controller.GetResources)
-	svr.Router().Get("/"+name+"/:id", controller.GetResource)
-	svr.Router().Post("/"+name, controller.CreateRecordMatchJob)
-	svr.Router().Put("/"+name+"/:id", controller.UpdateResource)
-	svr.Router().Delete("/"+name+"/:id", controller.DeleteResource)
+	svr.FhirSvr.Engine.GET("/"+name, controller.GetResources)
+	svr.FhirSvr.Engine.GET("/"+name+"/:id", controller.GetResource)
+	svr.FhirSvr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
+	svr.FhirSvr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
+	svr.FhirSvr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 }
 
-func welcome(c *echo.Context) error {
-	return c.String(http.StatusOK, "Patient Matching Test Harness Server")
+func welcome(c *gin.Context) {
+	c.String(http.StatusOK, "Patient Matching Test Harness Server")
 }
