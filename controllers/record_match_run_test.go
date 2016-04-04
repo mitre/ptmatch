@@ -60,7 +60,7 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 	c.Assert(database, NotNil)
 
 	controller = ResourceController{}
-	controller.Database = database
+	controller.DatabaseProvider = func() *mgo.Database { return database }
 }
 
 func (s *ServerSuite) TearDownTest(c *C) {
@@ -95,7 +95,7 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", recMatchConfig)
 	recMatchConfig.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 	recMatchConfig.MasterRecordSetID = masterRecSet.ID
-	ptm_models.PersistResource(controller.Database, "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.PersistResource(controller.Database(), "RecordMatchConfiguration", recMatchConfig)
 	c.Assert(*recMatchConfig, NotNil)
 
 	// Build a record match run
@@ -133,7 +133,7 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 	recMatchConfig.MasterRecordSetID = masterRecSet.ID
 	recMatchConfig.QueryRecordSetID = queryRecSet.ID
 	recMatchConfig.MatchingMode = ptm_models.Query
-	ptm_models.PersistResource(controller.Database, "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.PersistResource(controller.Database(), "RecordMatchConfiguration", recMatchConfig)
 	c.Assert(*recMatchConfig, NotNil)
 
 	// Build a record match run
@@ -161,7 +161,7 @@ func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	recMatchConfig := &ptm_models.RecordMatchConfiguration{}
 	ptm_models.LoadResourceFromFile("../fixtures/record-match-config-01.json", recMatchConfig)
 	recMatchConfig.RecordMatchSystemInterfaceID = recMatchSysIface.ID
-	ptm_models.PersistResource(controller.Database, "RecordMatchConfiguration", recMatchConfig)
+	ptm_models.PersistResource(controller.Database(), "RecordMatchConfiguration", recMatchConfig)
 	c.Assert(*recMatchConfig, NotNil)
 
 	// Build a record match run

@@ -21,7 +21,6 @@ import (
 	"net/http"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/labstack/echo"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2/bson"
@@ -76,9 +75,9 @@ func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
 		logrus.Fields{"func": "TestRecordMatchJobResponse",
 			"resp msg": string(buf)}).Info("prep to POST")
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
-	code, body := request(echo.POST, "/Bundle",
+	code, body := request("POST", "/Bundle",
 		bytes.NewReader(buf), "application/json", e)
 	c.Assert(code, Equals, http.StatusCreated)
 	c.Assert(body, NotNil)

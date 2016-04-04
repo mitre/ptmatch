@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 
@@ -29,29 +29,24 @@ import (
 	fhir_models "github.com/intervention-engine/fhir/models"
 )
 
-func PostProcessRecordMatchResponse(db *mgo.Database) echo.MiddlewareFunc {
-	return func(hf echo.HandlerFunc) echo.HandlerFunc {
-		return func(ctx *echo.Context) error {
-			logger.Log.Info("PostProcessRecordMatchResponse: Before calling handler")
-			err := hf(ctx)
-			if err != nil {
-				return err
-			}
-			resourceType := ctx.Get("Resource")
+func PostProcessRecordMatchResponse(db *mgo.Database) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		logger.Log.Info("PostProcessRecordMatchResponse: Before calling handler")
+		ctx.Next()
+		resourceType, _ := ctx.Get("Resource")
 
-			logger.Log.WithFields(logrus.Fields{"func": "PostProcessRecordMatchResponse",
-				"method":       ctx.Request().Method,
-				"query":        ctx.Request().RequestURI,
-				"resourceType": resourceType}).Info("check resource type exists")
+		logger.Log.WithFields(logrus.Fields{"func": "PostProcessRecordMatchResponse",
+			"method":       ctx.Request.Method,
+			"query":        ctx.Request.RequestURI,
+			"resourceType": resourceType}).Info("check resource type exists")
 
-			if resourceType.(string) == "Bundle" &&
-				ctx.Request().Method == "PUT" || ctx.Request().Method == "POST" {
-				resource := ctx.Get(resourceType.(string))
-				updateRecordMatchJob(db, resource.(*fhir_models.Bundle))
-			}
-			return nil
+		if resourceType.(string) == "Bundle" &&
+			ctx.Request.Method == "PUT" || ctx.Request.Method == "POST" {
+			resource, _ := ctx.Get(resourceType.(string))
+			updateRecordMatchJob(db, resource.(*fhir_models.Bundle))
 		}
 	}
+
 }
 
 func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {

@@ -26,7 +26,7 @@ import (
 	"gopkg.in/mgo.v2/bson"
 
 	"github.com/Sirupsen/logrus"
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 	"github.com/satori/go.uuid"
 
 	fhir_models "github.com/intervention-engine/fhir/models"
@@ -37,13 +37,14 @@ import (
 
 // CreateRecordMatchJob creates a new Record Match Job and constructs and
 // sends a Record Match request message.
-func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
-	req := ctx.Request()
+func (rc *ResourceController) CreateRecordMatchJob(ctx *gin.Context) {
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 	obj := ptm_models.NewStructForResourceName(resourceType)
 	recMatchJob := obj.(*ptm_models.RecordMatchJob)
 	if err := ctx.Bind(recMatchJob); err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	// retrieve and validate the record match configuration
@@ -53,27 +54,37 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 			"recMatchConfigID": recMatchConfigID}).Debug("check recmatch config id")
 	if !recMatchConfigID.Valid() {
 		// Bad Request: Record Match Configuration is required
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid RecordMatchConfigurationID")
+		ctx.String(http.StatusBadRequest, "Invalid RecordMatchConfigurationID")
+		ctx.Abort()
+		return
 	}
 	// Retrieve the RecordMatchConfiguration specified in the run object
-	obj, err := ptm_models.LoadResource(rc.Database, "RecordMatchConfiguration", recMatchConfigID)
+	obj, err := ptm_models.LoadResource(rc.Database(), "RecordMatchConfiguration", recMatchConfigID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Unable to find Record Match Configuration")
+		ctx.String(http.StatusBadRequest, "Unable to find Record Match Configuration")
+		ctx.Abort()
+		return
 	}
 	recMatchConfig := obj.(*ptm_models.RecordMatchConfiguration)
 	if !isValidRecordMatchConfig(recMatchConfig) {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Record Match Configuration")
+		ctx.String(http.StatusBadRequest, "Invalid Record Match Configuration")
+		ctx.Abort()
+		return
 	}
 
 	// Retrieve the info about the record matcher
-	obj, err = ptm_models.LoadResource(rc.Database, "RecordMatchSystemInterface",
+	obj, err = ptm_models.LoadResource(rc.Database(), "RecordMatchSystemInterface",
 		recMatchConfig.RecordMatchSystemInterfaceID)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusBadRequest, "Unable to find Record Match System Interface")
+		ctx.String(http.StatusBadRequest, "Unable to find Record Match System Interface")
+		ctx.Abort()
+		return
 	}
 	recMatchSysIface := obj.(*ptm_models.RecordMatchSystemInterface)
 	if !isValidRecordMatchSysIface(recMatchSysIface) {
-		return echo.NewHTTPError(http.StatusBadRequest, "Invalid Record Match System Interface")
+		ctx.String(http.StatusBadRequest, "Invalid Record Match System Interface")
+		ctx.Abort()
+		return
 	}
 
 	// construct a record match request
@@ -99,7 +110,8 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 		logger.Log.WithFields(
 			logrus.Fields{"method": "CreateRecordMatchJob",
 				"err": err}).Error("Sending Record Match Request")
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	// Store status, Sent, with the run object
@@ -113,9 +125,10 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 	}
 
 	// Persist the record match run
-	resource, err := ptm_models.PersistResource(rc.Database, resourceType, recMatchJob)
+	resource, err := ptm_models.PersistResource(rc.Database(), resourceType, recMatchJob)
 	if err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	/*
@@ -124,7 +137,7 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *echo.Context) error {
 				"res type": resourceType, "id": id}).Info("CreateResource")
 	*/
 	//reflect.ValueOf(resource).Elem().FieldByName("ID").Set(reflect.ValueOf(id))
-	return ctx.JSON(http.StatusCreated, resource)
+	ctx.JSON(http.StatusCreated, resource)
 }
 
 func isValidRecordMatchConfig(rmc *ptm_models.RecordMatchConfiguration) bool {
@@ -224,7 +237,7 @@ func (rc *ResourceController) newMessageHeader(
 
 	// load the record match system Interface referenced in record match config
 	obj, err := ptm_models.LoadResource(
-		rc.Database, "RecordMatchSystemInterface", recMatchConfig.RecordMatchSystemInterfaceID)
+		rc.Database(), "RecordMatchSystemInterface", recMatchConfig.RecordMatchSystemInterfaceID)
 	if err != nil {
 		return &msgHdr, err
 	}
@@ -256,7 +269,7 @@ func (rc *ResourceController) addRecordSetParams(recMatchConfig *ptm_models.Reco
 
 	// retrieve the info for the master record Set
 	obj, err := ptm_models.LoadResource(
-		rc.Database, "RecordSet", recMatchConfig.MasterRecordSetID)
+		rc.Database(), "RecordSet", recMatchConfig.MasterRecordSetID)
 	if err != nil {
 		return err
 	}
@@ -273,7 +286,7 @@ func (rc *ResourceController) addRecordSetParams(recMatchConfig *ptm_models.Reco
 	if recMatchConfig.MatchingMode == ptm_models.Query {
 		// retrieve the info for the query record set
 		obj, err := ptm_models.LoadResource(
-			rc.Database, "RecordSet", recMatchConfig.QueryRecordSetID)
+			rc.Database(), "RecordSet", recMatchConfig.QueryRecordSetID)
 		if err != nil {
 			return err
 		}

@@ -1,0 +1,107 @@
+{
+	"ImportPath": "github.com/mitre/ptmatch",
+	"GoVersion": "go1.6",
+	"Packages": [
+		"github.com/mitre/ptmatch",
+		"github.com/mitre/ptmatch/controllers",
+		"github.com/mitre/ptmatch/http",
+		"github.com/mitre/ptmatch/logger",
+		"github.com/mitre/ptmatch/middleware",
+		"github.com/mitre/ptmatch/models",
+		"github.com/mitre/ptmatch/server"
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0",
+			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin",
+			"Comment": "v1.0rc1-248-g4a6bc4a",
+			"Rev": "4a6bc4aac4607e253bcda67c8c5bcda693d2388e"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin/binding",
+			"Comment": "v1.0rc1-248-g4a6bc4a",
+			"Rev": "4a6bc4aac4607e253bcda67c8c5bcda693d2388e"
+		},
+		{
+			"ImportPath": "github.com/gin-gonic/gin/render",
+			"Comment": "v1.0rc1-248-g4a6bc4a",
+			"Rev": "4a6bc4aac4607e253bcda67c8c5bcda693d2388e"
+		},
+		{
+			"ImportPath": "github.com/golang/protobuf/proto",
+			"Rev": "8d92cf5fc15a4382f8964b08e1f42a75c0591aa3"
+		},
+		{
+			"ImportPath": "github.com/intervention-engine/fhir/models",
+			"Comment": "DSTU1-131-g54a01f7",
+			"Rev": "54a01f7744cfb59a6b08d1bb6b9afc8057a7dffa"
+		},
+		{
+			"ImportPath": "github.com/intervention-engine/fhir/search",
+			"Comment": "DSTU1-131-g54a01f7",
+			"Rev": "54a01f7744cfb59a6b08d1bb6b9afc8057a7dffa"
+		},
+		{
+			"ImportPath": "github.com/intervention-engine/fhir/server",
+			"Comment": "DSTU1-131-g54a01f7",
+			"Rev": "54a01f7744cfb59a6b08d1bb6b9afc8057a7dffa"
+		},
+		{
+			"ImportPath": "github.com/manucorporat/sse",
+			"Rev": "ee05b128a739a0fb76c7ebd3ae4810c1de808d6d"
+		},
+		{
+			"ImportPath": "github.com/pebbe/util",
+			"Rev": "732c49a562eac4233f1e635fdfa58f9c8bc0f969"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Rev": "f9ab0dce87d815821e221626b772e3475a0d2749"
+		},
+		{
+			"ImportPath": "github.com/thoas/stats",
+			"Rev": "7f7735fe9a9da3aadbc1b7fc6e59012a137dd516"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "4876518f9e71663000c348837735820161a42df7"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3"
+		},
+		{
+			"ImportPath": "gopkg.in/check.v1",
+			"Rev": "64131543e7896d5bcc6bd5a76287eb75ea96c673"
+		},
+		{
+			"ImportPath": "gopkg.in/go-playground/validator.v8",
+			"Comment": "v8.17.1",
+			"Rev": "014792cf3e266caff1e916876be12282b33059e0"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2",
+			"Comment": "r2015.12.06-2-g03c9f3e",
+			"Rev": "03c9f3ee4c14c8e51ee521a6a7d0425658dd6f64"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/bson",
+			"Comment": "r2015.12.06-2-g03c9f3e",
+			"Rev": "03c9f3ee4c14c8e51ee521a6a7d0425658dd6f64"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/internal/sasl",
+			"Comment": "r2015.12.06-2-g03c9f3e",
+			"Rev": "03c9f3ee4c14c8e51ee521a6a7d0425658dd6f64"
+		},
+		{
+			"ImportPath": "gopkg.in/mgo.v2/internal/scram",
+			"Comment": "r2015.12.06-2-g03c9f3e",
+			"Rev": "03c9f3ee4c14c8e51ee521a6a7d0425658dd6f64"
+		}
+	]
+}

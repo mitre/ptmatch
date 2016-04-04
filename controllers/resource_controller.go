@@ -17,6 +17,7 @@ limitations under the License.
 package controllers
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/url"
@@ -24,7 +25,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/labstack/echo"
+	"github.com/gin-gonic/gin"
 
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
@@ -35,30 +36,37 @@ import (
 )
 
 type ResourceController struct {
-	Database *mgo.Database
+	DatabaseProvider func() *mgo.Database
 }
 
-func (rc *ResourceController) GetResources(ctx *echo.Context) error {
-	req := ctx.Request()
+func (r ResourceController) Database() *mgo.Database {
+	return r.DatabaseProvider()
+}
+
+func (rc *ResourceController) GetResources(ctx *gin.Context) {
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 
 	logger.Log.WithFields(
 		logrus.Fields{"resource type": resourceType}).Info("GetResources")
 
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
-	c := rc.Database.C(ptm_models.GetCollectionName(resourceType))
+	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	// retrieve all documents in the collection
 	// TODO Restrict this to resourc type, just to be extra safe
 	err := c.Find(bson.M{}).All(resources)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return echo.NewHTTPError(http.StatusNotFound, "Not Found")
+			ctx.String(http.StatusNotFound, "Not Found")
+			ctx.Abort()
+			return
 		} else {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
 		}
 	}
 
-	return ctx.JSON(http.StatusOK, resources)
+	ctx.JSON(http.StatusOK, resources)
 }
 
 // getResourceType extracts the resource type associated with the
@@ -76,7 +84,7 @@ func getResourceType(url *url.URL) string {
 // resource type and object identifier.
 func (rc *ResourceController) LoadResource(resourceType string, id bson.ObjectId) (interface{}, error) {
 	// Determine the collection expected to hold the resource
-	c := rc.Database.C(ptm_models.GetCollectionName(resourceType))
+	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	result := ptm_models.NewStructForResourceName(resourceType)
 	err := c.Find(bson.M{"_id": id}).One(result)
 	if err != nil {
@@ -93,20 +101,21 @@ func toBsonObjectID(idString string) (bson.ObjectId, error) {
 	if bson.IsObjectIdHex(idString) {
 		id = bson.ObjectIdHex(idString)
 	} else {
-		return bson.ObjectId(0), echo.NewHTTPError(http.StatusBadRequest, "Invalid resource identifier: "+idString)
+		return bson.ObjectId(0), errors.New("Invalid resource identifier: " + idString)
 	}
 	return id, nil
 }
 
-func (rc *ResourceController) GetResource(ctx *echo.Context) error {
+func (rc *ResourceController) GetResource(ctx *gin.Context) {
 	var id bson.ObjectId
-	req := ctx.Request()
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 
 	// Validate id as a bson Object ID
 	id, err := toBsonObjectID(ctx.Param("id"))
 	if err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	logger.Log.WithFields(
 		logrus.Fields{"resource type": resourceType, "id": id}).Info("GetResource")
@@ -114,15 +123,18 @@ func (rc *ResourceController) GetResource(ctx *echo.Context) error {
 	resource, err := rc.LoadResource(resourceType, id)
 	if err != nil {
 		if err == mgo.ErrNotFound {
-			return echo.NewHTTPError(http.StatusNotFound, "Not Found")
+			ctx.String(http.StatusNotFound, "Not Found")
+			ctx.Abort()
+			return
 		} else {
-			return echo.NewHTTPError(http.StatusBadRequest, err.Error())
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
 		}
 	}
 
 	logger.Log.WithFields(logrus.Fields{"resource": resource}).Info("GetResource")
 
-	return ctx.JSON(http.StatusOK, resource)
+	ctx.JSON(http.StatusOK, resource)
 }
 
 // CreateResource creates an instance of the resource associated with
@@ -130,17 +142,19 @@ func (rc *ResourceController) GetResource(ctx *echo.Context) error {
 // and then persists the object in the database.  A unique identifier is
 // created and associated with the object.  A copy of the object that was
 // stored in the database is returned in the response.
-func (rc *ResourceController) CreateResource(ctx *echo.Context) error {
-	req := ctx.Request()
+func (rc *ResourceController) CreateResource(ctx *gin.Context) {
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 	resource := ptm_models.NewStructForResourceName(resourceType)
 	if err := ctx.Bind(resource); err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
-	res, err := ptm_models.PersistResource(rc.Database, resourceType, resource)
+	res, err := ptm_models.PersistResource(rc.Database(), resourceType, resource)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	id := reflect.ValueOf(res).Elem().FieldByName("ID").String()
@@ -148,12 +162,12 @@ func (rc *ResourceController) CreateResource(ctx *echo.Context) error {
 	logger.Log.WithFields(
 		logrus.Fields{"res type": resourceType, "id": id}).Info("CreateResource")
 
-	ctx.Response().Header().Set(echo.Location, responseURL(req, resourceType, id).String())
+	ctx.Header("Location", responseURL(req, resourceType, id).String())
 
-	return ctx.JSON(http.StatusCreated, res)
+	ctx.JSON(http.StatusCreated, res)
 }
 
-func (rc *ResourceController) UpdateResource(ctx *echo.Context) error {
+func (rc *ResourceController) UpdateResource(ctx *gin.Context) {
 	var id bson.ObjectId
 
 	// Section 9.6 of RFC 2616 says to return 201 if resource didn't already exist
@@ -161,13 +175,14 @@ func (rc *ResourceController) UpdateResource(ctx *echo.Context) error {
 	// http://www.w3.org/Protocols/rfc2616/rfc2616-sec9.html#sec9.6
 	var statusCode int = http.StatusOK
 
-	req := ctx.Request()
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 
 	// Validate id as a bson Object ID
 	id, err := toBsonObjectID(ctx.Param("id"))
 	if err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	var createdOn reflect.Value
@@ -178,7 +193,8 @@ func (rc *ResourceController) UpdateResource(ctx *echo.Context) error {
 		if err == mgo.ErrNotFound {
 			statusCode = http.StatusCreated
 		} else {
-			return err
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
 		}
 	} else {
 		//		reflect.ValueOf(&n).Elem().FieldByName("N").Set(reflect.ValueOf(ft))
@@ -190,10 +206,11 @@ func (rc *ResourceController) UpdateResource(ctx *echo.Context) error {
 
 	resource := ptm_models.NewStructForResourceName(resourceType)
 	if err := ctx.Bind(resource); err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
-	c := rc.Database.C(ptm_models.GetCollectionName(resourceType))
+	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	// Force the ID provided in the URL to be in the resource object
 	reflect.ValueOf(resource).Elem().FieldByName("ID").Set(reflect.ValueOf(id))
 	ptm_models.UpdateLastUpdatedDate(resource)
@@ -205,40 +222,43 @@ func (rc *ResourceController) UpdateResource(ctx *echo.Context) error {
 		logrus.Fields{"createdOn2": createdOn2}).Info("UpdateResource")
 	err = c.Update(bson.M{"_id": id}, resource)
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
 	logger.Log.WithFields(
 		logrus.Fields{"collection": ptm_models.GetCollectionName(resourceType),
 			"res type": resourceType, "id": id, "createdOn": createdOn}).Info("UpdateResource")
 
-	ctx.Response().Header().Set(echo.Location, responseURL(req, resourceType, id.Hex()).String())
+	ctx.Header("Location", responseURL(req, resourceType, id.Hex()).String())
 
-	return ctx.JSON(statusCode, resource)
+	ctx.JSON(statusCode, resource)
 }
 
 // DeleteResource handles requests to delete a specific resource.
-func (rc *ResourceController) DeleteResource(ctx *echo.Context) error {
+func (rc *ResourceController) DeleteResource(ctx *gin.Context) {
 	var id bson.ObjectId
-	req := ctx.Request()
+	req := ctx.Request
 	resourceType := getResourceType(req.URL)
 
 	// Validate id as a bson Object ID
 	id, err := toBsonObjectID(ctx.Param("id"))
 	if err != nil {
-		return err
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 	logger.Log.WithFields(
 		logrus.Fields{"resource type": resourceType, "id": id, "coll": ptm_models.GetCollectionName(resourceType)}).Info("DeleteResource")
 
 	// Determine the collection expected to hold the resource
-	c := rc.Database.C(ptm_models.GetCollectionName(resourceType))
+	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	err = c.Remove(bson.M{"_id": id})
 	if err != nil {
-		return echo.NewHTTPError(http.StatusInternalServerError, err.Error())
+		ctx.AbortWithError(http.StatusInternalServerError, err)
+		return
 	}
 
-	return ctx.NoContent(http.StatusNoContent)
+	ctx.Status(http.StatusNoContent)
 }
 
 func responseURL(r *http.Request, paths ...string) *url.URL {
