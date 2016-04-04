@@ -18,6 +18,7 @@ package main
 import (
 	"os"
 
+	fhirSvr "github.com/intervention-engine/fhir/server"
 	"github.com/mitre/ptmatch/server"
 )
 
@@ -28,7 +29,8 @@ func main() {
 		mongoHost = "localhost"
 	}
 
-	s := server.NewServer(mongoHost, "ptmatch", ":8881")
+	s := fhirSvr.NewServer(mongoHost)
+	server.Setup(s)
 
-	s.Run()
+	s.Run(fhirSvr.Config{})
 }

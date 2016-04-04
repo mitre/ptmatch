@@ -38,7 +38,7 @@ import (
 )
 
 type ServerSuite struct {
-	Server *RecMatchServer
+	Server *fhir_svr.FHIRServer
 }
 
 // Hook up gocheck into the "go test" runner.
@@ -50,40 +50,23 @@ var _ = Suite(&ServerSuite{})
 func (s *ServerSuite) SetUpSuite(c *C) {
 	var err error
 
-	s.Server = NewServer("localhost", "ptmatch-test", ":8882")
+	s.Server = fhir_svr.NewServer("localhost")
 
 	var mongoSession *mgo.Session
 	// Set up the database
-	if mongoSession, err = mgo.Dial(s.Server.DatabaseHost()); err != nil {
+	if mongoSession, err = mgo.Dial("localhost"); err != nil {
 		logger.Log.Error("Cannot connect to MongoDB. Is service running?")
 		panic(err)
 	}
 	c.Assert(mongoSession, NotNil)
+	database := mongoSession.DB("ptmatch-test")
+	fhir_svr.Database = database
 
-	database := mongoSession.DB(s.Server.DatabaseName)
-	SetDatabase(database)
+	Setup(s.Server)
 
-	registerMiddleware(s.Server)
-	registerRoutes(s.Server)
-	fhir_svr.RegisterRoutes(s.Server.FhirSvr.Engine,
-		s.Server.FhirSvr.MiddlewareConfig, fhir_svr.NewMongoDataAccessLayer(database),
+	fhir_svr.RegisterRoutes(s.Server.Engine,
+		s.Server.MiddlewareConfig, fhir_svr.NewMongoDataAccessLayer(database),
 		fhir_svr.Config{})
-}
-
-// SetUpTest is invoked before each test
-func (s *ServerSuite) SetUpTest(c *C) {
-
-}
-
-func (s *ServerSuite) TearDownTest(c *C) {
-	/*
-			if Database() != nil {
-			Database().C("recordMatchConfigurations").DropCollection()
-			Database().C("recordMatchSystemInterfaces").DropCollection()
-			Database().C("recordMatchSets").DropCollection()
-			Database().C("recordMatchJobs").DropCollection()
-		}
-	*/
 }
 
 func (s *ServerSuite) TestEchoRoutes(c *C) {
@@ -130,7 +113,7 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 		recs[i] = r.(*ptm_models.RecordMatchConfiguration)
 	}
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
 	// retrieve collection of record match configurations
 	code, body := request("GET", "/RecordMatchConfiguration", nil, "", e)
@@ -178,7 +161,7 @@ func (s *ServerSuite) TestPostRecordMatchSystemInterface(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-match-sys-if-01.json")
 	c.Assert(err, IsNil)
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
 	code, body := request("POST", "/RecordMatchSystemInterface",
 		bytes.NewReader(buf), "application/json", e)
@@ -198,7 +181,7 @@ func (s *ServerSuite) TestPostRecordMatchSystemInterface(c *C) {
 	c.Assert(err, IsNil)
 
 	// verify that a createdOn date was added to the resource
-	var meta *ptm_models.Meta = resource.Meta
+	var meta = resource.Meta
 	c.Assert(meta.CreatedOn, NotNil)
 	// verify that a lastUpdateOn date was added to the resource
 	c.Assert(meta.LastUpdatedOn, NotNil)
@@ -217,7 +200,7 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-match-sys-if-01.json")
 	c.Assert(err, IsNil)
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
 	// Post resource
 	code, body := request("POST", "/RecordMatchSystemInterface",
@@ -239,7 +222,7 @@ func (s *ServerSuite) TestPutRecordMatchSystemInterface(c *C) {
 	origDesc := resource.Description
 
 	// grab the original values of metadata fields
-	var meta *ptm_models.Meta = resource.Meta
+	var meta = resource.Meta
 	c.Assert(meta.CreatedOn, NotNil)
 	// verify that a lastUpdateOn date was added to the resource
 	c.Assert(meta.LastUpdatedOn, NotNil)
@@ -290,7 +273,7 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 	buf, err := ioutil.ReadFile("../fixtures/record-set-01.json")
 	c.Assert(err, IsNil)
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
 	code, body := request("POST", "/RecordSet",
 		bytes.NewReader(buf), "application/json", e)
@@ -310,7 +293,7 @@ func (s *ServerSuite) TestPostRecordSet(c *C) {
 	c.Assert(err, IsNil)
 
 	// verify that a createdOn date was added to the resource
-	var meta *ptm_models.Meta = resource.Meta
+	var meta = resource.Meta
 	c.Assert(meta.CreatedOn, NotNil)
 	// verify that a lastUpdateOn date was added to the resource
 	c.Assert(meta.LastUpdatedOn, NotNil)

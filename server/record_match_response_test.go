@@ -75,7 +75,7 @@ func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
 		logrus.Fields{"func": "TestRecordMatchJobResponse",
 			"resp msg": string(buf)}).Info("prep to POST")
 
-	e := s.Server.Router()
+	e := s.Server.Engine
 
 	code, body := request("POST", "/Bundle",
 		bytes.NewReader(buf), "application/json", e)

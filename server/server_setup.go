@@ -31,72 +31,36 @@ import (
 	"gopkg.in/mgo.v2"
 )
 
-type RecMatchServer struct {
-	DatabaseName string
-	ListenPort   string
-	FhirSvr      *fhir_svr.FHIRServer
-}
-
-func (svr *RecMatchServer) AddMiddleware(key string, middleware gin.HandlerFunc) {
-	svr.FhirSvr.AddMiddleware(key, middleware)
-	//	svr.FhirSvr.MiddlewareConfig[key] = append(svr.FhirSvr.MiddlewareConfig[key], middleware)
-}
-
-func (svr *RecMatchServer) DatabaseHost() string {
-	return svr.FhirSvr.DatabaseHost
-}
-
-func (svr *RecMatchServer) Router() *gin.Engine {
-	return svr.FhirSvr.Engine
-}
-
 func Database() *mgo.Database {
 	return fhir_svr.Database
 }
 
-func SetDatabase(db *mgo.Database) {
-	fhir_svr.Database = db
-}
-
-func NewServer(databaseHost string, dbName string, listenPort string) *RecMatchServer {
-	// TODO Validate database host name
-	// TODO Validate listenPort value
-
-	svr := &RecMatchServer{DatabaseName: dbName, ListenPort: listenPort}
-
-	svr.FhirSvr = fhir_svr.NewServer(databaseHost)
-
-	return svr
-}
-
-func (svr *RecMatchServer) Run() {
+func Setup(svr *fhir_svr.FHIRServer) {
 	logger.Log.WithFields(
-		logrus.Fields{"method": "Run",
-			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("before set")
+		logrus.Fields{"method": "Setup",
+			"bundle Mware": svr.MiddlewareConfig["Bundle"]}).Info("before set")
 
 	registerMiddleware(svr)
 	registerRoutes(svr)
 	logger.Log.WithFields(
-		logrus.Fields{"method": "Run",
-			"bundle Mware": svr.FhirSvr.MiddlewareConfig["Bundle"]}).Info("mware set?")
-
-	svr.FhirSvr.Run(fhir_svr.Config{})
+		logrus.Fields{"method": "Setup",
+			"bundle Mware": svr.MiddlewareConfig["Bundle"]}).Info("mware set?")
 }
 
-func registerMiddleware(svr *RecMatchServer) {
+func registerMiddleware(svr *fhir_svr.FHIRServer) {
 
 	//------------------------
 	// Third-party middleware
 	//------------------------
 	// See https://github.com/thoas/stats
 	s := stats.New()
-	svr.FhirSvr.Engine.Use(func(ctx *gin.Context) {
+	svr.Engine.Use(func(ctx *gin.Context) {
 		beginning, recorder := s.Begin(ctx.Writer)
 		ctx.Next()
 		s.End(beginning, recorder)
 	})
 	// Route
-	svr.FhirSvr.Engine.GET("/stats", func(c *gin.Context) {
+	svr.Engine.GET("/stats", func(c *gin.Context) {
 		logger.Log.Info("In stats")
 		c.JSON(http.StatusOK, s.Data())
 	})
@@ -107,8 +71,8 @@ func registerMiddleware(svr *RecMatchServer) {
 	svr.AddMiddleware("Bundle", recMatchWatch)
 }
 
-func registerRoutes(svr *RecMatchServer) {
-	svr.FhirSvr.Engine.GET("/", welcome)
+func registerRoutes(svr *fhir_svr.FHIRServer) {
+	svr.Engine.GET("/", welcome)
 
 	controller := rc.ResourceController{}
 	controller.DatabaseProvider = Database
@@ -117,19 +81,19 @@ func registerRoutes(svr *RecMatchServer) {
 		"RecordMatchSystemInterface", "RecordSet"}
 
 	for _, name := range resourceNames {
-		svr.FhirSvr.Engine.GET("/"+name, controller.GetResources)
-		svr.FhirSvr.Engine.GET("/"+name+"/:id", controller.GetResource)
-		svr.FhirSvr.Engine.POST("/"+name, controller.CreateResource)
-		svr.FhirSvr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
-		svr.FhirSvr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
+		svr.Engine.GET("/"+name+"/:id", controller.GetResource)
+		svr.Engine.POST("/"+name, controller.CreateResource)
+		svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
+		svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
+		svr.Engine.GET("/"+name, controller.GetResources)
 	}
 
 	name := "RecordMatchJob"
-	svr.FhirSvr.Engine.GET("/"+name, controller.GetResources)
-	svr.FhirSvr.Engine.GET("/"+name+"/:id", controller.GetResource)
-	svr.FhirSvr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
-	svr.FhirSvr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
-	svr.FhirSvr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
+	svr.Engine.GET("/"+name, controller.GetResources)
+	svr.Engine.GET("/"+name+"/:id", controller.GetResource)
+	svr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
+	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
+	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 }
 
 func welcome(c *gin.Context) {
