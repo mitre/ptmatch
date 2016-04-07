@@ -72,8 +72,6 @@ func registerMiddleware(svr *fhir_svr.FHIRServer) {
 }
 
 func registerRoutes(svr *fhir_svr.FHIRServer) {
-	svr.Engine.GET("/", welcome)
-
 	controller := rc.ResourceController{}
 	controller.DatabaseProvider = Database
 
@@ -94,8 +92,4 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	svr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
 	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
-}
-
-func welcome(c *gin.Context) {
-	c.String(http.StatusOK, "Patient Matching Test Harness Server")
 }

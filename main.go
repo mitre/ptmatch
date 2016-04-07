@@ -16,8 +16,10 @@ limitations under the License.
 package main
 
 import (
+	"net/http"
 	"os"
 
+	"github.com/gin-gonic/gin"
 	fhirSvr "github.com/intervention-engine/fhir/server"
 	"github.com/mitre/ptmatch/server"
 )
@@ -32,5 +34,10 @@ func main() {
 	s := fhirSvr.NewServer(mongoHost)
 	server.Setup(s)
 
+	s.Engine.GET("/", welcome)
 	s.Run(fhirSvr.Config{})
+}
+
+func welcome(c *gin.Context) {
+	c.String(http.StatusOK, "Patient Matching Test Harness Server")
 }
