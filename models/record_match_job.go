@@ -28,7 +28,15 @@ type RecordMatchJob struct {
 	RecordMatchConfigurationID bson.ObjectId                   `bson:"recordMatchConfigurationId,omitempty" json:"recordMatchConfigurationId,omitempty"`
 	Request                    RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
 	Responses                  []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
+	Metrics                    RecordMatchJobMetrics           `bson:"metrics,omitempty" json:"metrics,omitempty"`
 	Status                     []RecordMatchJobStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
+}
+
+type RecordMatchJobMetrics struct {
+	F          float32 `bson:"F,omitempty" json:"F,omitempty"`
+	FRecall    float32 `bson:"FRecall,omitempty" json:"FRecall,omitempty"`
+	FPrecision float32 `bson:"FPrecision,omitempty" json:"FPrecision,omitempty"`
+	MAP        float32 `bson:"MAP,omitempty" json:"MAP,omitempty"`
 }
 
 type RecordMatchJobStatusComponent struct {
