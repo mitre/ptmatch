@@ -27,11 +27,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 
+	"gopkg.in/mgo.v2"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
 
 	"github.com/Sirupsen/logrus"
-	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
 )
 
@@ -272,4 +272,46 @@ func responseURL(r *http.Request, paths ...string) *url.URL {
 	responseURL.Path = fmt.Sprintf("/%s", strings.Join(paths, "/"))
 
 	return &responseURL
+}
+
+func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
+	//req := ctx.Request
+	resourceType := "RecordMatchJob"
+
+	recordMatchSystemInterfaceId := ctx.Query("recordMatchSystemInterfaceId")
+	validRecordMatchSystemInterfaceId := len(recordMatchSystemInterfaceId) > 1 && len(recordMatchSystemInterfaceId) <= 60
+	recordSetId := ctx.Query("recordSetId")
+	validRecordSetId := len(recordSetId) > 1 && len(recordSetId) <= 60
+
+	logger.Log.WithFields(
+		logrus.Fields{"resource type": resourceType, "rec match sys" : recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
+
+	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
+	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
+
+	if (validRecordSetId) {
+		// find the record match jobs with masterRecordSetId or queryRecordSetId == record set id
+
+	} else if validRecordMatchSystemInterfaceId {
+
+	} else { // no query parameters were provided
+		// get all record jobs with, primarily, metrics only
+		// retrieve all documents in the collection
+		// TODO Restrict this to resourc type, just to be extra safe
+		err := c.Find(bson.M{}).Select(bson.M{"meta" : 1, "metrics": 1, "recordMatchSystemInterfaceId" : 1, "matchingMode" : 1, "recordResourceType" : 1, "masterRecordSetId" : 1, "queryRecordSetId" : 1, "recordMatchConfigurationId" : 1 }).All(resources)
+    if err != nil {
+  		if err == mgo.ErrNotFound {
+  			ctx.String(http.StatusNotFound, "Not Found")
+  			ctx.Abort()
+  			return
+  		} else {
+  			ctx.AbortWithError(http.StatusBadRequest, err)
+  			return
+  		}
+  	}
+}
+
+
+
+	ctx.JSON(http.StatusOK, resources)
 }

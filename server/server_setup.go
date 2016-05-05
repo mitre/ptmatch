@@ -22,13 +22,12 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thoas/stats"
 
+	"gopkg.in/mgo.v2"
 	rc "github.com/mitre/ptmatch/controllers"
 	logger "github.com/mitre/ptmatch/logger"
 	mw "github.com/mitre/ptmatch/middleware"
 
 	fhir_svr "github.com/intervention-engine/fhir/server"
-
-	"gopkg.in/mgo.v2"
 )
 
 func Database() *mgo.Database {
@@ -92,4 +91,6 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	svr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
 	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
+
+	svr.Engine.GET("/RecordMatchJobMetrics", controller.GetRecordMatchJobMetrics)
 }
