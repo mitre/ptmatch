@@ -72,6 +72,13 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *gin.Context) {
 		return
 	}
 
+	// Pull over information from the configuration record we want to keep stable with job
+	recMatchJob.MatchingMode = recMatchConfig.MatchingMode
+	recMatchJob.RecordResourceType = recMatchConfig.RecordResourceType
+	recMatchJob.RecordMatchSystemInterfaceID = recMatchConfig.RecordMatchSystemInterfaceID
+	recMatchJob.MasterRecordSetID = recMatchConfig.MasterRecordSetID
+	recMatchJob.QueryRecordSetID = recMatchConfig.QueryRecordSetID
+
 	// Retrieve the info about the record matcher
 	obj, err = ptm_models.LoadResource(rc.Database(), "RecordMatchSystemInterface",
 		recMatchConfig.RecordMatchSystemInterfaceID)
