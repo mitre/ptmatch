@@ -288,6 +288,7 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 
+
   var query *mgo.Query
 
 	if (validRecordSetId) {
