@@ -288,41 +288,40 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 
+	var query *mgo.Query
 
-  var query *mgo.Query
+	if validRecordSetId {
+		logger.Log.WithFields(
+			// find the record match jobs with masterRecordSetId or queryRecordSetId == record set id
+			logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
 
-	if (validRecordSetId) {
-    logger.Log.WithFields(
-      // find the record match jobs with masterRecordSetId or queryRecordSetId == record set id
-  		logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
-
-    recordSetBsonId, _ := ptm_models.ToBsonObjectID(recordSetId)
-    query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonId}, bson.M{"queryRecordSetId": recordSetBsonId}}})
+		recordSetBsonId, _ := ptm_models.ToBsonObjectID(recordSetId)
+		query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonId}, bson.M{"queryRecordSetId": recordSetBsonId}}})
 
 	} else if validRecordMatchSystemInterfaceId {
-    recordMatchSystemInterfaceBsonId, _ := ptm_models.ToBsonObjectID(recordMatchSystemInterfaceId)
-    query = c.Find(bson.M{"recordMatchSystemInterfaceId": recordMatchSystemInterfaceBsonId})
+		recordMatchSystemInterfaceBsonId, _ := ptm_models.ToBsonObjectID(recordMatchSystemInterfaceId)
+		query = c.Find(bson.M{"recordMatchSystemInterfaceId": recordMatchSystemInterfaceBsonId})
 
 	} else { // no query parameters were provided
 		// get all record jobs with, primarily, metrics only
 		// retrieve all documents in the collection
 		// TODO Restrict this to resourc type, just to be extra safe
 		query = c.Find(bson.M{})
-  }
+	}
 
-  // constrain whic fields are returned
-  err := query.Select(bson.M{"meta" : 1, "metrics": 1, "recordMatchSystemInterfaceId" : 1, "matchingMode" : 1, "recordResourceType" : 1, "masterRecordSetId" : 1, "queryRecordSetId" : 1, "recordMatchConfigurationId" : 1 }).All(resources)
+	// constrain whic fields are returned
+	err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchConfigurationId": 1}).All(resources)
 
-  if err != nil {
-    if err == mgo.ErrNotFound {
-      ctx.String(http.StatusNotFound, "Not Found")
-      ctx.Abort()
-      return
-    } else {
-      ctx.AbortWithError(http.StatusBadRequest, err)
-      return
-    }
-  }
+	if err != nil {
+		if err == mgo.ErrNotFound {
+			ctx.String(http.StatusNotFound, "Not Found")
+			ctx.Abort()
+			return
+		} else {
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
+	}
 
 	ctx.JSON(http.StatusOK, resources)
 }
