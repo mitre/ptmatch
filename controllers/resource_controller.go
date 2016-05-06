@@ -282,19 +282,12 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 	recordSetId := ctx.Query("recordSetId")
 	validRecordSetId := len(recordSetId) > 1 && len(recordSetId) <= 24 && bson.IsObjectIdHex(recordSetId)
 
-	logger.Log.WithFields(
-		logrus.Fields{"resource type": resourceType, "rec match sys": recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
-
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
-
 
   var query *mgo.Query
 
 	if (validRecordSetId) {
-    logger.Log.WithFields(
-      // find the record match jobs with masterRecordSetId or queryRecordSetId == record set id
-  		logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
 
     recordSetBsonId, _ := ptm_models.ToBsonObjectID(recordSetId)
     query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonId}, bson.M{"queryRecordSetId": recordSetBsonId}}})
