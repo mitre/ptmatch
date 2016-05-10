@@ -30,7 +30,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 
-  fhir_models "github.com/intervention-engine/fhir/models"
+	fhir_models "github.com/intervention-engine/fhir/models"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
 	"gopkg.in/mgo.v2"
@@ -335,51 +335,51 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 // The uploaded file is expected to be a FHIR Bundle  of type, document,
 // in JSON representation.
 func (rc *ResourceController) SetAnswerKey(ctx *gin.Context) {
-  recordSetId, err := toBsonObjectID(ctx.PostForm("recordSetId"))
+	recordSetId, err := toBsonObjectID(ctx.PostForm("recordSetId"))
 
-  // Ensure the referenced Record Set exists
-  resource, err := rc.LoadResource("RecordSet", recordSetId)
-  if err != nil {
-    ctx.AbortWithError(http.StatusNotFound, err)
-    return
-  }
-  recordSet := resource.(*ptm_models.RecordSet)
+	// Ensure the referenced Record Set exists
+	resource, err := rc.LoadResource("RecordSet", recordSetId)
+	if err != nil {
+		ctx.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+	recordSet := resource.(*ptm_models.RecordSet)
 
-  // extract the answer key from the posted form
-  file, _ , err := ctx.Request.FormFile("answerKey")
-  if err != nil {
-    ctx.AbortWithError(http.StatusBadRequest, err)
-    return
-  }
-  // write uploaded content to a temp file
-  tmpfile, err := ioutil.TempFile(os.TempDir(), "ptmatch-")
-  defer os.Remove(tmpfile.Name())
-  _, err = io.Copy(tmpfile, file)
+	// extract the answer key from the posted form
+	file, _, err := ctx.Request.FormFile("answerKey")
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	// write uploaded content to a temp file
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "ptmatch-")
+	defer os.Remove(tmpfile.Name())
+	_, err = io.Copy(tmpfile, file)
 
-  ptm_models.LoadResourceFromFile(tmpfile.Name(), &recordSet.AnswerKey)
+	ptm_models.LoadResourceFromFile(tmpfile.Name(), &recordSet.AnswerKey)
 
-  if (isValidAnswerKey(recordSet.AnswerKey)) {
-    c := rc.Database().C(ptm_models.GetCollectionName("RecordSet"))
-    err = c.Update(bson.M{"_id": recordSetId}, recordSet)
-    if err != nil {
-    	ctx.AbortWithError(http.StatusInternalServerError, err)
-    	return
-    }
+	if isValidAnswerKey(recordSet.AnswerKey) {
+		c := rc.Database().C(ptm_models.GetCollectionName("RecordSet"))
+		err = c.Update(bson.M{"_id": recordSetId}, recordSet)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
 
-    resource, err = rc.LoadResource("RecordSet", recordSetId)
-    if err != nil {
-      ctx.AbortWithError(http.StatusInternalServerError, err)
-      return
-    }
-    recordSet = resource.(*ptm_models.RecordSet)
+		resource, err = rc.LoadResource("RecordSet", recordSetId)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		recordSet = resource.(*ptm_models.RecordSet)
 
-    logger.Log.WithFields(
-  		logrus.Fields{"updated recordset" : recordSet}).Info("SetAnswerKey")
+		logger.Log.WithFields(
+			logrus.Fields{"updated recordset": recordSet}).Info("SetAnswerKey")
 
-    ctx.JSON(http.StatusOK, recordSet)
-  } else {
-    ctx.AbortWithStatus(400)
-  }
+		ctx.JSON(http.StatusOK, recordSet)
+	} else {
+		ctx.AbortWithStatus(400)
+	}
 }
 
 func isValidAnswerKey(b fhir_models.Bundle) bool {
@@ -394,7 +394,7 @@ func isValidAnswerKey(b fhir_models.Bundle) bool {
 				isValid = true
 			}
 		}
-  }
+	}
 
 	return isValid
 }
