@@ -19,11 +19,11 @@ package controllers
 import (
 	"errors"
 	"fmt"
-  "io"
-  "io/ioutil"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
-  "os"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
@@ -143,8 +143,8 @@ func (rc *ResourceController) GetResource(ctx *gin.Context) {
 
 // CreateResource creates an instance of the resource associated with
 // the request url, writes the body of the request into the new object,
-// and then persists the object in the database.  A unique identifier is
-// created and associated with the object.  A copy of the object that was
+// and then persists the object in the database. A unique identifier is
+// created and associated with the object. A copy of the object that was
 // stored in the database is returned in the response.
 func (rc *ResourceController) CreateResource(ctx *gin.Context) {
 	req := ctx.Request
@@ -383,17 +383,17 @@ func (rc *ResourceController) SetAnswerKey(ctx *gin.Context) {
 }
 
 func isValidAnswerKey(b fhir_models.Bundle) bool {
-  isValid := false
+	isValid := false
 
-  if b.Type == "document" && b.Id != "" {
-    // Verify that first entry is a Composition resource
-    comp  := reflect.TypeOf((*fhir_models.Composition)(nil))
-    if len(b.Entry) > 0 {
-      r := reflect.TypeOf(b.Entry[0].Resource)
-      if r.AssignableTo(comp) {
-        isValid = true
-      }
-    }
+	if b.Type == "document" && b.Id != "" {
+		// Verify that first entry is a Composition resource
+		comp := reflect.TypeOf((*fhir_models.Composition)(nil))
+		if len(b.Entry) > 0 {
+			r := reflect.TypeOf(b.Entry[0].Resource)
+			if r.AssignableTo(comp) {
+				isValid = true
+			}
+		}
   }
 
 	return isValid

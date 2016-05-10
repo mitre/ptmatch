@@ -209,7 +209,7 @@ func LoadResourceFromFile(fileName string, resource interface{}) {
 	err = decoder.Decode(r)
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"resource": resource, "error" : err}).Warn("LoadResourceFromFile")
-    util.WarnErr(err)
+		util.WarnErr(err)
 	}
 
 }

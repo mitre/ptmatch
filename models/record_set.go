@@ -27,6 +27,6 @@ type RecordSet struct {
 	Name         string                  `bson:"name,omitempty" json:"name,omitempty"`
 	Description  string                  `bson:"description,omitempty" json:"description,omitempty"`
 	ResourceType string                  `bson:"resourceType,omitempty" json:"resourceType,omitempty"`
-  AnswerKey    fhir_models.Bundle     `bson:"answerKey,omitempty" json:"answerKey,omitempty"`
+	AnswerKey    fhir_models.Bundle     `bson:"answerKey,omitempty" json:"answerKey,omitempty"`
 	Parameters   *fhir_models.Parameters `bson:"parameters,omitempty" json:"parameters,omitempty"`
 }
