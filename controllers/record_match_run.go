@@ -95,7 +95,7 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *gin.Context) {
 	}
 
 	recMatchJob.Metrics = ptm_models.RecordMatchJobMetrics{}
-	
+
 	// construct a record match request
 	reqMatchRequest := rc.newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchConfig)
 	// attach the request message to the run object
@@ -175,7 +175,6 @@ func isValidRecordMatchSysIface(rmsi *ptm_models.RecordMatchSystemInterface) boo
 	}
 	return isValid
 }
-
 
 func prepEndpoint(baseURL, id string) string {
 	result := baseURL

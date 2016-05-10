@@ -93,7 +93,7 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 
 			logger.Log.WithFields(logrus.Fields{"action": "look for dupl response",
 				"respMsg.Id": respMsg.Id,
-				"count": count}).Info("updateRecordMatchJob")
+				"count":      count}).Info("updateRecordMatchJob")
 
 			if count > 0 {
 				// The response message has been processed before
@@ -118,12 +118,11 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 			if bson.IsObjectIdHex(respMsg.Id) {
 				respID = bson.ObjectIdHex(respMsg.Id)
 			} else {
-				logger.Log.WithFields(logrus.Fields{"msg" : "Response Msg Id is not BSON Object Id format",
+				logger.Log.WithFields(logrus.Fields{"msg": "Response Msg Id is not BSON Object Id format",
 					"rec match run ID": recMatchJob.ID,
-					"respMsg.id":            respMsg.Id}).Warn("updateRecordMatchJob")
+					"respMsg.id":       respMsg.Id}).Warn("updateRecordMatchJob")
 				respID = bson.NewObjectId()
 			}
-
 
 			// Add the record match response to the record run data
 			err = c.UpdateId(recMatchJob.ID,
