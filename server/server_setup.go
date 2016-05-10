@@ -30,10 +30,12 @@ import (
 	fhir_svr "github.com/intervention-engine/fhir/server"
 )
 
+// Database is a convenience function to obtain a pointer to the fhir server database.
 func Database() *mgo.Database {
 	return fhir_svr.Database
 }
 
+// Setup performs initialization of the middleware and routes.
 func Setup(svr *fhir_svr.FHIRServer) {
 	logger.Log.WithFields(
 		logrus.Fields{"method": "Setup",
@@ -47,7 +49,6 @@ func Setup(svr *fhir_svr.FHIRServer) {
 }
 
 func registerMiddleware(svr *fhir_svr.FHIRServer) {
-
 	//------------------------
 	// Third-party middleware
 	//------------------------
@@ -64,9 +65,8 @@ func registerMiddleware(svr *fhir_svr.FHIRServer) {
 		c.JSON(http.StatusOK, s.Data())
 	})
 
-	recMatchWatch := mw.PostProcessRecordMatchResponse(fhir_svr.Database)
+	recMatchWatch := mw.PostProcessRecordMatchResponse()
 
-	//	recMatchWatch := mw.PostProcessFhirResource("PUT", fhir_svr.Database)
 	svr.AddMiddleware("Bundle", recMatchWatch)
 }
 
@@ -84,6 +84,8 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 		svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 		svr.Engine.GET("/"+name, controller.GetResources)
 	}
+
+	svr.Engine.POST("/AnswerKey", controller.SetAnswerKey)
 
 	name := "RecordMatchJob"
 	svr.Engine.GET("/"+name, controller.GetResources)

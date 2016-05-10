@@ -19,14 +19,18 @@ package controllers
 import (
 	"errors"
 	"fmt"
+	"io"
+	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"reflect"
 	"regexp"
 	"strings"
 
 	"github.com/gin-gonic/gin"
 
+	fhir_models "github.com/intervention-engine/fhir/models"
 	logger "github.com/mitre/ptmatch/logger"
 	ptm_models "github.com/mitre/ptmatch/models"
 	"gopkg.in/mgo.v2"
@@ -139,8 +143,8 @@ func (rc *ResourceController) GetResource(ctx *gin.Context) {
 
 // CreateResource creates an instance of the resource associated with
 // the request url, writes the body of the request into the new object,
-// and then persists the object in the database.  A unique identifier is
-// created and associated with the object.  A copy of the object that was
+// and then persists the object in the database. A unique identifier is
+// created and associated with the object. A copy of the object that was
 // stored in the database is returned in the response.
 func (rc *ResourceController) CreateResource(ctx *gin.Context) {
 	req := ctx.Request
@@ -181,7 +185,7 @@ func (rc *ResourceController) UpdateResource(ctx *gin.Context) {
 	// Validate id as a bson Object ID
 	id, err := toBsonObjectID(ctx.Param("id"))
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -324,4 +328,73 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 	}
 
 	ctx.JSON(http.StatusOK, resources)
+}
+
+// SetAnswerKey associates a specified Record Set with a FHIR Bundle that
+// contains a set of expected record matches (i.e., answer key for the record set)
+// The uploaded file is expected to be a FHIR Bundle  of type, document,
+// in JSON representation.
+func (rc *ResourceController) SetAnswerKey(ctx *gin.Context) {
+	recordSetId, err := toBsonObjectID(ctx.PostForm("recordSetId"))
+
+	// Ensure the referenced Record Set exists
+	resource, err := rc.LoadResource("RecordSet", recordSetId)
+	if err != nil {
+		ctx.AbortWithError(http.StatusNotFound, err)
+		return
+	}
+	recordSet := resource.(*ptm_models.RecordSet)
+
+	// extract the answer key from the posted form
+	file, _, err := ctx.Request.FormFile("answerKey")
+	if err != nil {
+		ctx.AbortWithError(http.StatusBadRequest, err)
+		return
+	}
+	// write uploaded content to a temp file
+	tmpfile, err := ioutil.TempFile(os.TempDir(), "ptmatch-")
+	defer os.Remove(tmpfile.Name())
+	_, err = io.Copy(tmpfile, file)
+
+	ptm_models.LoadResourceFromFile(tmpfile.Name(), &recordSet.AnswerKey)
+
+	if isValidAnswerKey(recordSet.AnswerKey) {
+		c := rc.Database().C(ptm_models.GetCollectionName("RecordSet"))
+		err = c.Update(bson.M{"_id": recordSetId}, recordSet)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+
+		resource, err = rc.LoadResource("RecordSet", recordSetId)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		recordSet = resource.(*ptm_models.RecordSet)
+
+		logger.Log.WithFields(
+			logrus.Fields{"updated recordset": recordSet}).Info("SetAnswerKey")
+
+		ctx.JSON(http.StatusOK, recordSet)
+	} else {
+		ctx.AbortWithStatus(400)
+	}
+}
+
+func isValidAnswerKey(b fhir_models.Bundle) bool {
+	isValid := false
+
+	if b.Type == "document" && b.Id != "" {
+		// Verify that first entry is a Composition resource
+		comp := reflect.TypeOf((*fhir_models.Composition)(nil))
+		if len(b.Entry) > 0 {
+			r := reflect.TypeOf(b.Entry[0].Resource)
+			if r.AssignableTo(comp) {
+				isValid = true
+			}
+		}
+	}
+
+	return isValid
 }

@@ -27,23 +27,27 @@ import (
 	ptm_models "github.com/mitre/ptmatch/models"
 
 	fhir_models "github.com/intervention-engine/fhir/models"
+	fhir_svr "github.com/intervention-engine/fhir/server"
 )
 
-func PostProcessRecordMatchResponse(db *mgo.Database) gin.HandlerFunc {
+// PostProcessRecordMatchResponse is a middleware function that processes the
+// response message received from the record matching system.
+func PostProcessRecordMatchResponse() gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		logger.Log.Info("PostProcessRecordMatchResponse: Before calling handler")
 		ctx.Next()
 		resourceType, _ := ctx.Get("Resource")
 
-		logger.Log.WithFields(logrus.Fields{"func": "PostProcessRecordMatchResponse",
+		logger.Log.WithFields(logrus.Fields{"action": "check resource type exists",
 			"method":       ctx.Request.Method,
 			"query":        ctx.Request.RequestURI,
-			"resourceType": resourceType}).Info("check resource type exists")
+			"resourceType": resourceType}).Info("PostProcessRecordMatchResponse")
 
 		if resourceType.(string) == "Bundle" &&
 			ctx.Request.Method == "PUT" || ctx.Request.Method == "POST" {
 			resource, _ := ctx.Get(resourceType.(string))
-			updateRecordMatchJob(db, resource.(*fhir_models.Bundle))
+			// Need to access Database via global variable 'cuz DB not initializaed when middlewhare is configured
+			updateRecordMatchJob(fhir_svr.Database, resource.(*fhir_models.Bundle))
 		}
 	}
 
@@ -56,8 +60,8 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 		msgHdr := respMsg.Entry[0].Resource.(*fhir_models.MessageHeader)
 		resp := msgHdr.Response
 
-		logger.Log.WithFields(logrus.Fields{"func": "handleResponseBundle",
-			"msg hdr": msgHdr}).Info("Recognized Bundle of type, message")
+		logger.Log.WithFields(logrus.Fields{"action": "Recognized Bundle of type, message",
+			"msg hdr": msgHdr}).Info("updateRecordMatchJob")
 
 		// verify this is a response for a record-match request
 		if resp != nil &&
@@ -69,6 +73,7 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 			c := db.C(ptm_models.GetCollectionName("RecordMatchJob"))
 			recMatchJob := &ptm_models.RecordMatchJob{}
 
+			// retrieve the record-match run
 			err := c.Find(
 				bson.M{"request.message.entry.resource._id": reqID}).One(recMatchJob)
 			if err != nil {
@@ -77,23 +82,24 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 					"request msg id": reqID}).Warn("Unable to find RecMatchJob assoc w. request")
 				return err
 			}
-			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
-				"result": recMatchJob}).Info("found run assoc w. request")
+			logger.Log.WithFields(logrus.Fields{"action": "found run assoc w. request",
+				"result": recMatchJob}).Info("updateRecordMatchJob")
 
 			now := time.Now()
 
-			// check that the response is already assoc. w/ the record match run object
+			// check whether the response is already assoc. w/ the record match run object
 			count, err := c.Find(bson.M{"_id": recMatchJob.ID,
 				"responses.message._id": respMsg.Id}).Count()
 
-			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
-				"count": count}).Info("look for dupl response")
+			logger.Log.WithFields(logrus.Fields{"action": "look for dupl response",
+				"respMsg.Id": respMsg.Id,
+				"count":      count}).Info("updateRecordMatchJob")
 
 			if count > 0 {
 				// The response message has been processed before
-				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
+				logger.Log.WithFields(logrus.Fields{"action": "record match response seen before",
 					"record match run": recMatchJob.ID,
-					"response msg Id":  respMsg.Id}).Info("record match response seen before")
+					"response msg Id":  respMsg.Id}).Info("updateRecordMatchJob")
 
 				// Record that we've seen this response before
 				err = c.UpdateId(recMatchJob.ID,
@@ -107,7 +113,16 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 				return nil
 			}
 
-			respID := bson.NewObjectId()
+			var respID bson.ObjectId
+
+			if bson.IsObjectIdHex(respMsg.Id) {
+				respID = bson.ObjectIdHex(respMsg.Id)
+			} else {
+				logger.Log.WithFields(logrus.Fields{"msg": "Response Msg Id is not BSON Object Id format",
+					"rec match run ID": recMatchJob.ID,
+					"respMsg.id":       respMsg.Id}).Warn("updateRecordMatchJob")
+				respID = bson.NewObjectId()
+			}
 
 			// Add the record match response to the record run data
 			err = c.UpdateId(recMatchJob.ID,
@@ -119,9 +134,9 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 				}}})
 
 			if err != nil {
-				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
+				logger.Log.WithFields(logrus.Fields{"action": "Error adding response to Job Info",
 					"rec match run ID": recMatchJob.ID,
-					"error":            err}).Warn("Error adding response to Job Info")
+					"error":            err}).Warn("updateRecordMatchJob")
 				return err
 			}
 
@@ -135,9 +150,9 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 							"createdOn": now}}})
 
 			if err != nil {
-				logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
+				logger.Log.WithFields(logrus.Fields{"action": "Error updating response status in run object",
 					"rec match run ID": recMatchJob.ID,
-					"error":            err}).Warn("Error updating response status in run object")
+					"error":            err}).Warn("updateRecordMatchJob")
 				return err
 			}
 		}

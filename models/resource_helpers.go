@@ -67,7 +67,7 @@ func StructForResourceName(name string) interface{} {
 		return RecordSet{}
 
 	default:
-		logger.Log.Warn("StructForResourceName() No match for name %s", name)
+		logger.Log.Warn("StructForResourceName() No match for name ", name)
 		return nil
 	}
 }
@@ -201,15 +201,15 @@ func InsertResourceFromFile(db *mgo.Database, resourceType string, filePath stri
 
 func LoadResourceFromFile(fileName string, resource interface{}) {
 	fstream, err := os.Open(fileName)
-	util.CheckErr(err)
+	util.WarnErr(err)
 	defer fstream.Close()
 
 	decoder := json.NewDecoder(fstream)
 	r := &resource
 	err = decoder.Decode(r)
 	if err != nil {
-		logger.Log.WithFields(logrus.Fields{"resource": resource}).Info("LoadResourceFromFile")
+		logger.Log.WithFields(logrus.Fields{"resource": resource, "error" : err}).Warn("LoadResourceFromFile")
+		util.WarnErr(err)
 	}
 
-	util.CheckErr(err)
 }

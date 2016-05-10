@@ -22,10 +22,11 @@ import (
 )
 
 type RecordSet struct {
-	ID           bson.ObjectId           `bson:"_id,omitempty" json:"id,omitempty"`
-	Meta         *Meta                   `bson:"meta,omitempty" json:"meta,omitempty"`
-	Name         string                  `bson:"name,omitempty" json:"name,omitempty"`
-	Description  string                  `bson:"description,omitempty" json:"description,omitempty"`
-	ResourceType string                  `bson:"resourceType,omitempty" json:"resourceType,omitempty"`
-	Parameters   *fhir_models.Parameters `bson:"parameters,omitempty" json:"parameters,omitempty"`
+	ID           bson.ObjectId      `bson:"_id,omitempty" json:"id,omitempty"`
+	Meta         *Meta              `bson:"meta,omitempty" json:"meta,omitempty"`
+	Name         string             `bson:"name,omitempty" json:"name,omitempty"`
+	Description  string             `bson:"description,omitempty" json:"description,omitempty"`
+	ResourceType string             `bson:"resourceType,omitempty" json:"resourceType,omitempty"`
+	AnswerKey    fhir_models.Bundle `bson:"answerKey,omitempty" json:"answerKey,omitempty"`
+	Parameters *fhir_models.Parameters `bson:"parameters,omitempty" json:"parameters,omitempty"`
 }
