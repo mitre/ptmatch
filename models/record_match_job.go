@@ -43,13 +43,15 @@ type RecordMatchJob struct {
 // RecordMatchJobMetrics contains statistics associated with the results reported
 // by a record matching system.
 type RecordMatchJobMetrics struct {
-	F1         float32 `bson:"f1,omitempty" json:"f1,omitempty"`
-	Precision  float32 `bson:"precision,omitempty" json:"precision,omitempty"`
-	Recall     float32 `bson:"recall,omitempty" json:"recall,omitempty"`
-	MatchCount int     `bson:"matchCount,omitempty" json:"matchCount,omitempty"`
-	FRecall    float32 `bson:"FRecall,omitempty" json:"FRecall,omitempty"`
-	FPrecision float32 `bson:"FPrecision,omitempty" json:"FPrecision,omitempty"`
-	MAP        float32 `bson:"MAP,omitempty" json:"MAP,omitempty"`
+	F1                 float32 `bson:"f1,omitempty" json:"f1,omitempty"`
+	Precision          float32 `bson:"precision,omitempty" json:"precision,omitempty"`
+	Recall             float32 `bson:"recall,omitempty" json:"recall,omitempty"`
+	MatchCount         int     `bson:"matchCount,omitempty" json:"matchCount,omitempty"`
+	TruePositiveCount  int     `bson:"truePositiveCount,omitempty" json:"truePositiveCount,omitempty"`
+	FalsePositiveCount int     `bson:"falsePositiveCount,omitempty" json:"falsePositiveCount,omitempty"`
+	FRecall            float32 `bson:"FRecall,omitempty" json:"FRecall,omitempty"`
+	FPrecision         float32 `bson:"FPrecision,omitempty" json:"FPrecision,omitempty"`
+	MAP                float32 `bson:"MAP,omitempty" json:"MAP,omitempty"`
 }
 
 type RecordMatchJobStatusComponent struct {
