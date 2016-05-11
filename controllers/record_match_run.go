@@ -94,8 +94,6 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *gin.Context) {
 		return
 	}
 
-	recMatchJob.Metrics = ptm_models.RecordMatchJobMetrics{}
-
 	// construct a record match request
 	reqMatchRequest := rc.newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchConfig)
 	// attach the request message to the run object

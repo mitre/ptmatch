@@ -61,6 +61,7 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 		resp := msgHdr.Response
 
 		logger.Log.WithFields(logrus.Fields{"action": "Recognized Bundle of type, message",
+			"bundle id": respMsg.Id,
 			"msg hdr": msgHdr}).Info("updateRecordMatchJob")
 
 		// verify this is a response for a record-match request
@@ -115,6 +116,8 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 
 			var respID bson.ObjectId
 
+			// if the bundle id looks like a bson object id, use it; else we need
+			// to create a bson id 'cuz IE fhir server only supports those (5/10/16)'
 			if bson.IsObjectIdHex(respMsg.Id) {
 				respID = bson.ObjectIdHex(respMsg.Id)
 			} else {
@@ -134,9 +137,9 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 				}}})
 
 			if err != nil {
-				logger.Log.WithFields(logrus.Fields{"action": "Error adding response to Job Info",
+				logger.Log.WithFields(logrus.Fields{"msg": "Error adding response to Job Info",
 					"rec match run ID": recMatchJob.ID,
-					"error":            err}).Warn("updateRecordMatchJob")
+					"error":            err}).Warn("eupdateRecordMatchJob")
 				return err
 			}
 
@@ -150,11 +153,13 @@ func updateRecordMatchJob(db *mgo.Database, respMsg *fhir_models.Bundle) error {
 							"createdOn": now}}})
 
 			if err != nil {
-				logger.Log.WithFields(logrus.Fields{"action": "Error updating response status in run object",
+				logger.Log.WithFields(logrus.Fields{"msg": "Error updating response status in run object",
 					"rec match run ID": recMatchJob.ID,
 					"error":            err}).Warn("updateRecordMatchJob")
 				return err
 			}
+			// Calculate metrics
+			_ = calcMetrics(db, recMatchJob, respMsg)
 		}
 	}
 	return nil
