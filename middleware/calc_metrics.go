@@ -110,6 +110,7 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 			}
 		}
 	}
+
 	logger.Log.WithFields(logrus.Fields{
 		"truePositive":  truePositiveCount,
 		"falsePositive": falsePositiveCount,
@@ -121,6 +122,7 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 		metrics.FalsePositiveCount += falsePositiveCount
 		metrics.Precision = float32(metrics.TruePositiveCount) / float32(metrics.TruePositiveCount+metrics.FalsePositiveCount)
 		metrics.Recall = float32(metrics.TruePositiveCount) / float32(totalResults)
+		metrics.F1 = 2.0 * ((metrics.Precision * metrics.Recall) / (metrics.Precision + metrics.Recall))
 	}
 
 	now := time.Now()
