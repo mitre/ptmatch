@@ -107,6 +107,8 @@ func (rc *ResourceController) CreateRecordMatchJob(ctx *gin.Context) {
 	logger.Log.WithFields(
 		logrus.Fields{"method": "CreateRecordMatchJob",
 			"server endpoint": svrEndpoint,
+			"reqBody":         string(reqBody[:]),
+			"message":         reqMatchRequest.Message,
 			"request":         reqMatchRequest}).Info("About to submit request")
 
 	reqMatchRequest.SubmittedOn = time.Now()
@@ -230,9 +232,9 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 	ptm_models.AddCreatedOn(req)
 
 	logger.Log.WithFields(
-		logrus.Fields{"method": "NewRecordMatchRequest",
+		logrus.Fields{
 			"match mode":  recMatchConfig.MatchingMode,
-			"num entries": numEntries}).Debug("")
+			"num entries": numEntries}).Debug("NewRecordMatchRequest")
 
 	return req
 }
@@ -288,7 +290,7 @@ func (rc *ResourceController) addRecordSetParams(recMatchConfig *ptm_models.Reco
 	logger.Log.WithFields(
 		logrus.Fields{"method": "addRecordSetParams",
 			"match mode":   recMatchConfig.MatchingMode,
-			"masterRecSet": masterRecSet}).Info("")
+			"masterRecSet": masterRecSet}).Debug("addRecordSetParams")
 
 	if recMatchConfig.MatchingMode == ptm_models.Query {
 		// retrieve the info for the query record set

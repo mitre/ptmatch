@@ -34,12 +34,12 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 	respMsg *fhir_models.Bundle) error {
 
 	answerKey, _ := getAnswerKey(db, recMatchJob)
-	totalResults := 0
+	numAnswers := 0
 	var answerMap map[string]*groundTruth
 
 	if answerKey != nil {
 		// store answer key info in map
-		answerMap, totalResults = buildAnswerMap(answerKey)
+		answerMap, numAnswers = buildAnswerMap(answerKey)
 	}
 
 	metrics := recMatchJob.Metrics
@@ -117,11 +117,12 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 		"matchCount":    matchCount}).Info("calcMetrics")
 
 	metrics.MatchCount += matchCount
-	if answerKey != nil && totalResults > 0 {
+	// if there is an answer key w/ answers and some results were processed
+	if answerKey != nil && numAnswers > 0 && matchCount > 0 {
 		metrics.TruePositiveCount += truePositiveCount
 		metrics.FalsePositiveCount += falsePositiveCount
 		metrics.Precision = float32(metrics.TruePositiveCount) / float32(metrics.TruePositiveCount+metrics.FalsePositiveCount)
-		metrics.Recall = float32(metrics.TruePositiveCount) / float32(totalResults)
+		metrics.Recall = float32(metrics.TruePositiveCount) / float32(numAnswers)
 		metrics.F1 = 2.0 * ((metrics.Precision * metrics.Recall) / (metrics.Precision + metrics.Recall))
 	}
 
@@ -194,7 +195,7 @@ func getAnswerKey(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob) (*fh
 }
 
 func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int) {
-	totalResults := 0
+	numAnswers := 0
 	m := make(map[string]*groundTruth)
 	for i, entry := range answerKey.Entry {
 		//		rtype := reflect.TypeOf(entry.Resource)
@@ -228,7 +229,7 @@ func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int
 								item.linkedURLs[0] = linkedURL
 								item.numFound[0] = 1
 								m[refURL] = item
-								totalResults++
+								numAnswers++
 							}
 						}
 					}
@@ -236,7 +237,7 @@ func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int
 			}
 		}
 	}
-	return m, totalResults
+	return m, numAnswers
 }
 
 type groundTruth struct {
