@@ -313,8 +313,8 @@ func (rc *ResourceController) GetRecordMatchRunMetrics(ctx *gin.Context) {
 		query = c.Find(bson.M{})
 	}
 
-	// constrain whic fields are returned
-	err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchConfigurationId": 1}).All(resources)
+	// constrain which fields are returned
+	err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchContextId": 1}).All(resources)
 
 	if err != nil {
 		if err == mgo.ErrNotFound {

@@ -22,10 +22,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thoas/stats"
 
-	"gopkg.in/mgo.v2"
 	rc "github.com/mitre/ptmatch/controllers"
 	logger "github.com/mitre/ptmatch/logger"
 	mw "github.com/mitre/ptmatch/middleware"
+	"gopkg.in/mgo.v2"
 
 	fhir_svr "github.com/intervention-engine/fhir/server"
 )
@@ -74,7 +74,7 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	controller := rc.ResourceController{}
 	controller.DatabaseProvider = Database
 
-	resourceNames := []string{"RecordMatchConfiguration",
+	resourceNames := []string{"RecordMatchContext",
 		"RecordMatchSystemInterface", "RecordSet"}
 
 	for _, name := range resourceNames {

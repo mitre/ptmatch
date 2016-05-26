@@ -23,15 +23,16 @@ import (
 )
 
 type RecordMatchRun struct {
-	ID                         bson.ObjectId                   `bson:"_id,omitempty" json:"id,omitempty"`
-	Meta                       *Meta                           `bson:"meta,omitempty" json:"meta,omitempty"`
-	Note                       string                          `bson:"note,omitempty" json:"note,omitempty"`
-	RecordMatchConfigurationID bson.ObjectId                   `bson:"recordMatchConfigurationId,omitempty" json:"recordMatchConfigurationId,omitempty"`
-	Request                    RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
-	Responses                  []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
-	Metrics                    RecordMatchRunMetrics           `bson:"metrics,omitempty" json:"metrics,omitempty"`
-	Status                     []RecordMatchRunStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
-	MatchingMode               string                          `bson:"matchingMode,omitempty" json:"matchingMode,omitempty"`
+	ID                   bson.ObjectId                   `bson:"_id,omitempty" json:"id,omitempty"`
+	Meta                 *Meta                           `bson:"meta,omitempty" json:"meta,omitempty"`
+	Note                 string                          `bson:"note,omitempty" json:"note,omitempty"`
+	RecordMatchContextID bson.ObjectId                   `bson:"recordMatchContextId,omitempty" json:"recordMatchContextId,omitempty"`
+	Request              RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
+	Responses            []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
+	Metrics              RecordMatchRunMetrics           `bson:"metrics,omitempty" json:"metrics,omitempty"`
+	Status               []RecordMatchRunStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
+	// ideally, deduplication or query
+	MatchingMode string `bson:"matchingMode,omitempty" json:"matchingMode,omitempty"`
 	// fhir resource type of the records being matched (e.g., Patient)
 	RecordResourceType string `bson:"recordResourceType,omitempty" json:"recordResourceType,omitempty"`
 	// reference to the record matching system interface

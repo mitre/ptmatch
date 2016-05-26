@@ -77,11 +77,11 @@ func (s *ServerSuite) TestEchoRoutes(c *C) {
 		Method string
 		Path   string
 	}{
-		{"GET", "/RecordMatchConfiguration"},
-		{"GET", "/RecordMatchConfiguration/:id"},
-		{"POST", "/RecordMatchConfiguration"},
-		{"PUT", "/RecordMatchConfiguration/:id"},
-		{"DELETE", "/RecordMatchConfiguration/:id"},
+		{"GET", "/RecordMatchContext"},
+		{"GET", "/RecordMatchContext/:id"},
+		{"POST", "/RecordMatchContext"},
+		{"PUT", "/RecordMatchContext/:id"},
+		{"DELETE", "/RecordMatchContext/:id"},
 	}
 	for _, r := range routes {
 		switch r.Method {
@@ -104,19 +104,19 @@ func (s *ServerSuite) TestEchoRoutes(c *C) {
 	}
 }
 
-func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
-	recs := [4]*ptm_models.RecordMatchConfiguration{}
+func (s *ServerSuite) TestGetRecordMatchContexts(c *C) {
+	recs := [4]*ptm_models.RecordMatchContext{}
 
-	// Add record match configurations
+	// Add record match contexts
 	for i := 0; i < len(recs); i++ {
-		r := ptm_models.InsertResourceFromFile(Database(), "RecordMatchConfiguration", "../fixtures/record-match-config-01.json")
-		recs[i] = r.(*ptm_models.RecordMatchConfiguration)
+		r := ptm_models.InsertResourceFromFile(Database(), "RecordMatchContext", "../fixtures/record-match-context-01.json")
+		recs[i] = r.(*ptm_models.RecordMatchContext)
 	}
 
 	e := s.Server.Engine
 
-	// retrieve collection of record match configurations
-	code, body := request("GET", "/RecordMatchConfiguration", nil, "", e)
+	// retrieve collection of record match contexts
+	code, body := request("GET", "/RecordMatchContext", nil, "", e)
 	c.Assert(code, Equals, http.StatusOK)
 	logger.Log.Debug("response body: " + body)
 
@@ -130,7 +130,7 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 
 	// Try to Get each resource created above
 	for _, rec := range recs {
-		path := "/RecordMatchConfiguration/" + rec.ID.Hex()
+		path := "/RecordMatchContext/" + rec.ID.Hex()
 		code, body = request("GET", path, nil, "", e)
 		c.Assert(code, Equals, http.StatusOK)
 		// confirm response body contains resource ID
@@ -140,13 +140,13 @@ func (s *ServerSuite) TestGetRecordMatchConfigurations(c *C) {
 
 	// Delete the resources created above
 	for _, rec := range recs {
-		path := "/RecordMatchConfiguration/" + rec.ID.Hex()
+		path := "/RecordMatchContext/" + rec.ID.Hex()
 		logger.Log.Debug("About to call DELETE: " + path)
 		code, body = request("DELETE", path, nil, "", e)
 		c.Assert(code, Equals, http.StatusNoContent)
 	}
 
-	code, body = request("GET", "/RecordMatchConfiguration", nil, "", e)
+	code, body = request("GET", "/RecordMatchContext", nil, "", e)
 	c.Assert(code, Equals, http.StatusOK)
 
 	for i, rec := range recs {

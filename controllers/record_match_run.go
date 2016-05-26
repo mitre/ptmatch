@@ -47,41 +47,28 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *gin.Context) {
 		return
 	}
 
-	// retrieve and validate the record match configuration
-	recMatchConfigID := recMatchRun.RecordMatchConfigurationID
+	if !isValidRecordMatchRun(recMatchRun) {
+		// Bad Request: Record Match Run contains invalid content
+		ctx.String(http.StatusBadRequest, "Invalid RecordMatchRun content")
+		ctx.Abort()
+		return
+	}
+
+	// retrieve and validate the record match context
+	recMatchContextID := recMatchRun.RecordMatchContextID
 	logger.Log.WithFields(
 		logrus.Fields{"method": "CreateRecordMatchRun",
-			"recMatchConfigID": recMatchConfigID}).Debug("check recmatch config id")
-	if !recMatchConfigID.Valid() {
-		// Bad Request: Record Match Configuration is required
-		ctx.String(http.StatusBadRequest, "Invalid RecordMatchConfigurationID")
+			"recMatchContextID": recMatchContextID}).Debug("check recmatch config id")
+	if !recMatchContextID.Valid() {
+		// Bad Request: Record Match Context is optional but must be valid, if provided
+		ctx.String(http.StatusBadRequest, "Invalid RecordMatchContextID")
 		ctx.Abort()
 		return
 	}
-	// Retrieve the RecordMatchConfiguration specified in the run object
-	obj, err := ptm_models.LoadResource(rc.Database(), "RecordMatchConfiguration", recMatchConfigID)
-	if err != nil {
-		ctx.String(http.StatusBadRequest, "Unable to find Record Match Configuration")
-		ctx.Abort()
-		return
-	}
-	recMatchConfig := obj.(*ptm_models.RecordMatchConfiguration)
-	if !isValidRecordMatchConfig(recMatchConfig) {
-		ctx.String(http.StatusBadRequest, "Invalid Record Match Configuration")
-		ctx.Abort()
-		return
-	}
-
-	// Pull over information from the configuration record we want to keep stable with run
-	recMatchRun.MatchingMode = recMatchConfig.MatchingMode
-	recMatchRun.RecordResourceType = recMatchConfig.RecordResourceType
-	recMatchRun.RecordMatchSystemInterfaceID = recMatchConfig.RecordMatchSystemInterfaceID
-	recMatchRun.MasterRecordSetID = recMatchConfig.MasterRecordSetID
-	recMatchRun.QueryRecordSetID = recMatchConfig.QueryRecordSetID
 
 	// Retrieve the info about the record matcher
-	obj, err = ptm_models.LoadResource(rc.Database(), "RecordMatchSystemInterface",
-		recMatchConfig.RecordMatchSystemInterfaceID)
+	obj, err := ptm_models.LoadResource(rc.Database(), "RecordMatchSystemInterface",
+		recMatchRun.RecordMatchSystemInterfaceID)
 	if err != nil {
 		ctx.String(http.StatusBadRequest, "Unable to find Record Match System Interface")
 		ctx.Abort()
@@ -95,7 +82,7 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *gin.Context) {
 	}
 
 	// construct a record match request
-	reqMatchRequest := rc.newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchConfig)
+	reqMatchRequest := rc.newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchRun)
 	// attach the request message to the run object
 	recMatchRun.Request = *reqMatchRequest
 
@@ -145,20 +132,23 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *gin.Context) {
 			logrus.Fields{"collection": ptm_models.GetCollectionName(resourceType),
 				"res type": resourceType, "id": id}).Info("CreateResource")
 	*/
-	//reflect.ValueOf(resource).Elem().FieldByName("ID").Set(reflect.ValueOf(id))
 	ctx.JSON(http.StatusCreated, resource)
 }
 
-func isValidRecordMatchConfig(rmc *ptm_models.RecordMatchConfiguration) bool {
+func isValidRecordMatchRun(rmr *ptm_models.RecordMatchRun) bool {
 	isValid := false
 
-	if rmc.RecordMatchSystemInterfaceID.Valid() {
+	if rmr.RecordMatchSystemInterfaceID.Valid() {
 		// verify that match mode corresponds to number of specified data lists (query, master)
-		if rmc.MatchingMode == ptm_models.Deduplication {
-			isValid = rmc.MasterRecordSetID.Valid()
-		} else if rmc.MatchingMode == ptm_models.Query {
-			isValid = rmc.MasterRecordSetID.Valid() && rmc.QueryRecordSetID.Valid()
+		if rmr.MatchingMode == ptm_models.Deduplication {
+			isValid = rmr.MasterRecordSetID.Valid()
+		} else if rmr.MatchingMode == ptm_models.Query {
+			isValid = rmr.MasterRecordSetID.Valid() && rmr.QueryRecordSetID.Valid()
 		}
+	}
+	// validate the record match context, if provided
+	if isValid && !rmr.RecordMatchContextID.Valid() {
+		isValid = false
 	}
 
 	return isValid
@@ -169,7 +159,7 @@ func isValidRecordMatchSysIface(rmsi *ptm_models.RecordMatchSystemInterface) boo
 
 	// check that server, destination, and response endpoints are Set
 	// TODO check that server, destination, and response endpoint values seem reasonable
-	if rmsi.DestinationEndpoint != "" &&
+	if rmsi.ID.Valid() && rmsi.DestinationEndpoint != "" &&
 		rmsi.ServerEndpoint != "" && rmsi.ResponseEndpoint != "" {
 		isValid = true
 	}
@@ -197,7 +187,7 @@ func prepEndpoint(baseURL, id string) string {
 }
 
 func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
-	recMatchConfig *ptm_models.RecordMatchConfiguration) *ptm_models.RecordMatchRequest {
+	recMatchRun *ptm_models.RecordMatchRun) *ptm_models.RecordMatchRequest {
 
 	req := &ptm_models.RecordMatchRequest{ID: bson.NewObjectId()}
 	req.Message = &fhir_models.Bundle{}
@@ -207,12 +197,12 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 
 	// deduplication has 2 entries (hdr +_one data); query has 3 (hdr + 2 data)
 	numEntries := 2
-	if recMatchConfig.MatchingMode == ptm_models.Query {
+	if recMatchRun.MatchingMode == ptm_models.Query {
 		numEntries = 3
 	}
 	req.Message.Entry = make([]fhir_models.BundleEntryComponent, numEntries)
 
-	msgHdr, err := rc.newMessageHeader(srcEndpoint, recMatchConfig)
+	msgHdr, err := rc.newMessageHeader(srcEndpoint, recMatchRun)
 	if err != nil {
 		//TODO What should I do here?  panic?
 		panic(fmt.Sprintf("Not IMPL: New Msg Hdr returned error: %s", err.Error()))
@@ -220,7 +210,7 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 	req.Message.Entry[0].Resource = msgHdr
 	req.Message.Entry[0].FullUrl = "urn:uuid:" + msgHdr.Id
 
-	rc.addRecordSetParams(recMatchConfig, req.Message)
+	rc.addRecordSetParams(recMatchRun, req.Message)
 	msgHdr.Data = make([]fhir_models.Reference, numEntries-1)
 
 	msgHdr.Data[0].Reference = req.Message.Entry[1].FullUrl
@@ -233,20 +223,22 @@ func (rc *ResourceController) newRecordMatchRequest(srcEndpoint string,
 
 	logger.Log.WithFields(
 		logrus.Fields{
-			"match mode":  recMatchConfig.MatchingMode,
+			"match mode":  recMatchRun.MatchingMode,
 			"num entries": numEntries}).Debug("NewRecordMatchRequest")
 
 	return req
 }
 
+// newMessageHeader constructs a FHIR MessageHeader resource using the information
+// associated with the given RecordMatchRun.
 func (rc *ResourceController) newMessageHeader(
-	srcEndpoint string, recMatchConfig *ptm_models.RecordMatchConfiguration) (*fhir_models.MessageHeader, error) {
+	srcEndpoint string, recMatchRun *ptm_models.RecordMatchRun) (*fhir_models.MessageHeader, error) {
 	msgHdr := fhir_models.MessageHeader{}
 	msgHdr.Id = uuid.NewV4().String()
 
-	// load the record match system Interface referenced in record match config
+	// load the record match system Interface referenced in record match run
 	obj, err := ptm_models.LoadResource(
-		rc.Database(), "RecordMatchSystemInterface", recMatchConfig.RecordMatchSystemInterfaceID)
+		rc.Database(), "RecordMatchSystemInterface", recMatchRun.RecordMatchSystemInterfaceID)
 	if err != nil {
 		return &msgHdr, err
 	}
@@ -274,11 +266,11 @@ func (rc *ResourceController) newMessageHeader(
 	return &msgHdr, nil
 }
 
-func (rc *ResourceController) addRecordSetParams(recMatchConfig *ptm_models.RecordMatchConfiguration, msg *fhir_models.Bundle) error {
+func (rc *ResourceController) addRecordSetParams(recMatchRun *ptm_models.RecordMatchRun, msg *fhir_models.Bundle) error {
 
 	// retrieve the info for the master record Set
 	obj, err := ptm_models.LoadResource(
-		rc.Database(), "RecordSet", recMatchConfig.MasterRecordSetID)
+		rc.Database(), "RecordSet", recMatchRun.MasterRecordSetID)
 	if err != nil {
 		return err
 	}
@@ -289,13 +281,13 @@ func (rc *ResourceController) addRecordSetParams(recMatchConfig *ptm_models.Reco
 
 	logger.Log.WithFields(
 		logrus.Fields{"method": "addRecordSetParams",
-			"match mode":   recMatchConfig.MatchingMode,
+			"match mode":   recMatchRun.MatchingMode,
 			"masterRecSet": masterRecSet}).Debug("addRecordSetParams")
 
-	if recMatchConfig.MatchingMode == ptm_models.Query {
+	if recMatchRun.MatchingMode == ptm_models.Query {
 		// retrieve the info for the query record set
 		obj, err := ptm_models.LoadResource(
-			rc.Database(), "RecordSet", recMatchConfig.QueryRecordSetID)
+			rc.Database(), "RecordSet", recMatchRun.QueryRecordSetID)
 		if err != nil {
 			return err
 		}
