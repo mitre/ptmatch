@@ -90,15 +90,14 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 	masterRecSet := r.(*ptm_models.RecordSet)
 	c.Assert(*masterRecSet, NotNil)
 
-	// Insert a corresponding record match context to the DB
-	recMatchContext := &ptm_models.RecordMatchContext{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-context-01.json", recMatchContext)
-	ptm_models.PersistResource(controller.Database(), "RecordMatchContext", recMatchContext)
-	c.Assert(*recMatchContext, NotNil)
+	// Insert a corresponding record match run to the DB
+	recMatchRun := &ptm_models.RecordMatchRun{}
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-run-post-01.json", recMatchRun)
+	recMatchRun.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 
 	// Build a record match run
 	// construct a record match request
-	req := controller.newRecordMatchRequest("http://localhost/fhir", recMatchContext)
+	req := controller.newRecordMatchRequest("http://localhost/fhir", recMatchRun)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchDedupRequest",
@@ -124,15 +123,15 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 	queryRecSet := r.(*ptm_models.RecordSet)
 	c.Assert(*queryRecSet, NotNil)
 
-	// Insert a corresponding record match context to the DB
-	recMatchContext := &ptm_models.RecordMatchContext{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-context-01.json", recMatchContext)
-	ptm_models.PersistResource(controller.Database(), "RecordMatchContext", recMatchContext)
-	c.Assert(*recMatchContext, NotNil)
+	recMatchRun := &ptm_models.RecordMatchRun{}
+	recMatchRun.RecordMatchSystemInterfaceID = recMatchSysIface.ID
+	recMatchRun.MatchingMode = "query"
+	recMatchRun.MasterRecordSetID = masterRecSet.ID
+	recMatchRun.QueryRecordSetID = queryRecSet.ID
 
 	// Build a record match run
 	// construct a record match request
-	req := controller.newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchContext)
+	req := controller.newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchQueryRequest",
@@ -143,7 +142,7 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 }
 
 // TestNewMessageHeader tests that a MessageHeader for a record-match
-// request is constructed from information in a RecordMatchContext object.
+// request is constructed from information in a RecordMatchRun object.
 func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	c.Assert(controller.Database, NotNil)
 	// Insert a record match system interface to the DB
@@ -151,16 +150,14 @@ func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
 	c.Assert(*recMatchSysIface, NotNil)
 
-	// Insert a corresponding record match context to the DB
-	recMatchContext := &ptm_models.RecordMatchContext{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-context-01.json", recMatchContext)
-	ptm_models.PersistResource(controller.Database(), "RecordMatchContext", recMatchContext)
-	c.Assert(*recMatchContext, NotNil)
+	recMatchRun := &ptm_models.RecordMatchRun{}
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-run-post-01.json", recMatchRun)
+	recMatchRun.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 
 	// Build a record match run
 	// construct a record match request
 	src := "http://replace.me/with/selurl/global"
-	msgHdr, _ := controller.newMessageHeader(src, recMatchContext)
+	msgHdr, _ := controller.newMessageHeader(src, recMatchRun)
 	c.Assert(msgHdr, NotNil)
 	c.Assert(msgHdr.Source.Endpoint, Equals, src)
 	c.Assert(msgHdr.Event.Code, Equals, "record-match")

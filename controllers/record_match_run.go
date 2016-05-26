@@ -260,8 +260,8 @@ func (rc *ResourceController) newMessageHeader(
 	// TODO Remove MarshalJSON() and Log calls when working
 	buf, _ := msgHdr.MarshalJSON()
 	logger.Log.WithFields(
-		logrus.Fields{"method": "newMessageHeader",
-			"msgHdr": string(buf)}).Info("")
+		logrus.Fields{
+			"msgHdr": string(buf)}).Info("newMessageHeader")
 
 	return &msgHdr, nil
 }
