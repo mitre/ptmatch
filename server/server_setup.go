@@ -87,12 +87,12 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 
 	svr.Engine.POST("/AnswerKey", controller.SetAnswerKey)
 
-	name := "RecordMatchJob"
+	name := "RecordMatchRun"
 	svr.Engine.GET("/"+name, controller.GetResources)
 	svr.Engine.GET("/"+name+"/:id", controller.GetResource)
-	svr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
+	svr.Engine.POST("/"+name, controller.CreateRecordMatchRun)
 	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 
-	svr.Engine.GET("/RecordMatchJobMetrics", controller.GetRecordMatchJobMetrics)
+	svr.Engine.GET("/RecordMatchRunMetrics", controller.GetRecordMatchRunMetrics)
 }
