@@ -30,29 +30,29 @@ import (
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
-func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
+func (s *ServerSuite) TestRecordMatchRunResponse(c *C) {
 	var r interface{}
 	// Insert a record match run object to the DB
-	//	r := ptm_models.InsertResourceFromFile(Database(), "RecordMatchJob", "../fixtures/record-match-run-01.json")
-	recMatchJob := &ptm_models.RecordMatchJob{}
-	ptm_models.LoadResourceFromFile("../fixtures/record-match-run-01.json", recMatchJob)
-	//	recMatchJob := r.(*ptm_models.RecordMatchJob)
-	c.Assert(*recMatchJob, NotNil)
+	//	r := ptm_models.InsertResourceFromFile(Database(), "RecordMatchRun", "../fixtures/record-match-run-01.json")
+	recMatchRun := &ptm_models.RecordMatchRun{}
+	ptm_models.LoadResourceFromFile("../fixtures/record-match-run-01.json", recMatchRun)
+	//	recMatchRun := r.(*ptm_models.RecordMatchRun)
+	c.Assert(*recMatchRun, NotNil)
 	// confirm initial state - zero responses assoc. w/ run
-	c.Assert(len(recMatchJob.Responses), Equals, 0)
+	c.Assert(len(recMatchRun.Responses), Equals, 0)
 	// Assign New Identifier to request message
-	//	recMatchJob.Request.Message.Enry[0].Resource.ID = bson.NewObjectId()
-	reqMsg := recMatchJob.Request.Message
+	//	recMatchRun.Request.Message.Enry[0].Resource.ID = bson.NewObjectId()
+	reqMsg := recMatchRun.Request.Message
 	reqMsgHdr := reqMsg.Entry[0].Resource.(*fhir_models.MessageHeader)
-	recMatchJob.Request.ID = bson.NewObjectId()
+	recMatchRun.Request.ID = bson.NewObjectId()
 	reqMsg.Id = bson.NewObjectId().Hex()
 	reqMsgHdr.Id = bson.NewObjectId().Hex()
 
-	ptm_models.PersistResource(Database(), "RecordMatchJob", recMatchJob)
+	ptm_models.PersistResource(Database(), "RecordMatchRun", recMatchRun)
 
 	logger.Log.WithFields(
-		logrus.Fields{"func": "TestRecordMatchJobResponse",
-			"recMatchJob": recMatchJob}).Info("after insert recMatchJob")
+		logrus.Fields{"func": "TestRecordMatchRunResponse",
+			"recMatchRun": recMatchRun}).Info("after insert recMatchRun")
 
 	respMsg := &fhir_models.Bundle{}
 	// Load text of a record match ack message
@@ -61,7 +61,7 @@ func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
 	c.Assert(*respMsg, NotNil)
 
 	// Ensure the response references the request
-	//	reqMsg := recMatchJob.Request.Message
+	//	reqMsg := recMatchRun.Request.Message
 	c.Assert(reqMsg, NotNil)
 	c.Assert(reqMsg.Type, Equals, "message")
 	c.Assert(len(reqMsg.Entry) > 1, Equals, true)
@@ -72,7 +72,7 @@ func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
 
 	buf, _ := respMsg.MarshalJSON()
 	logger.Log.WithFields(
-		logrus.Fields{"func": "TestRecordMatchJobResponse",
+		logrus.Fields{"func": "TestRecordMatchRunResponse",
 			"resp msg": string(buf)}).Info("prep to POST")
 
 	e := s.Server.Engine
@@ -84,21 +84,21 @@ func (s *ServerSuite) TestRecordMatchJobResponse(c *C) {
 	logger.Log.Info("Post Record Match response: " + body)
 
 	// Load the record match run object -- this time from database
-	r, err := ptm_models.LoadResource(Database(), "RecordMatchJob", recMatchJob.ID)
+	r, err := ptm_models.LoadResource(Database(), "RecordMatchRun", recMatchRun.ID)
 	c.Assert(err, IsNil)
 	c.Assert(r, NotNil)
-	recMatchJob = r.(*ptm_models.RecordMatchJob)
+	recMatchRun = r.(*ptm_models.RecordMatchRun)
 
 	logger.Log.WithFields(
-		logrus.Fields{"func": "TestRecordMatchJobResponse",
-			"recMatchJob": recMatchJob}).Info("after recv response")
+		logrus.Fields{"func": "TestRecordMatchRunResponse",
+			"recMatchRun": recMatchRun}).Info("after recv response")
 
 	// The response should be attached to the record match run ObjectId
-	c.Assert(len(recMatchJob.Responses), Equals, 1)
-	c.Assert(recMatchJob.Responses[0].ID, NotNil)
-	c.Assert(recMatchJob.Responses[0].Message, NotNil)
+	c.Assert(len(recMatchRun.Responses), Equals, 1)
+	c.Assert(recMatchRun.Responses[0].ID, NotNil)
+	c.Assert(recMatchRun.Responses[0].Message, NotNil)
 	var respMsg1 *fhir_models.Bundle
-	respMsg1 = recMatchJob.Responses[0].Message
+	respMsg1 = recMatchRun.Responses[0].Message
 
 	// After inserting into database, we've lost knowledge about type of resource in response message
 	// so we use hack to decode to and then encode from json to get map to struct

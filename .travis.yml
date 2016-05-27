@@ -1,0 +1,12 @@
+sudo: false
+language: go
+go:
+- 1.6
+install: true
+script: go test $(go list ./... | grep -v /vendor/)
+services:
+- mongodb
+branches:
+  only:
+  - master
+  

@@ -278,8 +278,8 @@ func responseURL(r *http.Request, paths ...string) *url.URL {
 	return &responseURL
 }
 
-func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
-	resourceType := "RecordMatchJob"
+func (rc *ResourceController) GetRecordMatchRunMetrics(ctx *gin.Context) {
+	resourceType := "RecordMatchRun"
 
 	recordMatchSystemInterfaceId := ctx.Query("recordMatchSystemInterfaceId")
 	validRecordMatchSystemInterfaceId := len(recordMatchSystemInterfaceId) > 1 && len(recordMatchSystemInterfaceId) <= 24 && bson.IsObjectIdHex(recordMatchSystemInterfaceId)
@@ -287,7 +287,7 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 	validRecordSetId := len(recordSetId) > 1 && len(recordSetId) <= 24 && bson.IsObjectIdHex(recordSetId)
 
 	logger.Log.WithFields(
-		logrus.Fields{"resource type": resourceType, "rec match sys": recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
+		logrus.Fields{"resource type": resourceType, "rec match sys": recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchRunMetrics")
 
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
@@ -296,8 +296,8 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 
 	if validRecordSetId {
 		logger.Log.WithFields(
-			// find the record match jobs with masterRecordSetId or queryRecordSetId == record set id
-			logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchJobMetrics")
+			// find the record match runs with masterRecordSetId or queryRecordSetId == record set id
+			logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchRunMetrics")
 
 		recordSetBsonId, _ := ptm_models.ToBsonObjectID(recordSetId)
 		query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonId}, bson.M{"queryRecordSetId": recordSetBsonId}}})
@@ -307,14 +307,14 @@ func (rc *ResourceController) GetRecordMatchJobMetrics(ctx *gin.Context) {
 		query = c.Find(bson.M{"recordMatchSystemInterfaceId": recordMatchSystemInterfaceBsonId})
 
 	} else { // no query parameters were provided
-		// get all record jobs with, primarily, metrics only
+		// get all record runs with, primarily, metrics only
 		// retrieve all documents in the collection
 		// TODO Restrict this to resourc type, just to be extra safe
 		query = c.Find(bson.M{})
 	}
 
-	// constrain whic fields are returned
-	err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchConfigurationId": 1}).All(resources)
+	// constrain which fields are returned
+	err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchContextId": 1}).All(resources)
 
 	if err != nil {
 		if err == mgo.ErrNotFound {

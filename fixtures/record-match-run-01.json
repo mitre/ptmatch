@@ -4,7 +4,10 @@
     "createdOn": "2016-01-22T12:41:27.378Z",
     "lastUpdatedOn": "2016-01-22T12:41:27.378Z"
   },
-  "recordMatchConfigurationId": "56a21d9aa291020ca7dd225f",
+  "recordMatchContextId": "56a21d9aa291020ca7dd225f",
+  "matchingMode" : "deduplication",
+  "masterRecordSetId": "569408c1a291020e5b3636f4",
+  "recordMatchSystemInterfaceId": "569408c1a291020e5b3637a4",
   "request": {
     "id": "56a22377a2910211dbe66e38",
     "meta": {

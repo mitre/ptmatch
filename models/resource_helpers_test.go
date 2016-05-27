@@ -34,9 +34,9 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 }
 
 func (s *ServerSuite) TestPluralizeLowerResourceName(c *C) {
-	var names = []string{"RecordMatchConfiguration",
+	var names = []string{"RecordMatchContext",
 		"SomeUnknownName", "RecordSet", "Message"}
-	var expected = []string{"recordMatchConfigurations",
+	var expected = []string{"recordMatchContexts",
 		"someUnknownNames", "recordSets", "messages"}
 
 	for i, name := range names {

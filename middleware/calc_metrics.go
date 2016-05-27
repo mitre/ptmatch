@@ -30,24 +30,24 @@ import (
 	fhir_models "github.com/intervention-engine/fhir/models"
 )
 
-func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
+func calcMetrics(db *mgo.Database, recMatchRun *ptm_models.RecordMatchRun,
 	respMsg *fhir_models.Bundle) error {
 
-	answerKey, _ := getAnswerKey(db, recMatchJob)
-	totalResults := 0
+	answerKey, _ := getAnswerKey(db, recMatchRun)
+	numAnswers := 0
 	var answerMap map[string]*groundTruth
 
 	if answerKey != nil {
 		// store answer key info in map
-		answerMap, totalResults = buildAnswerMap(answerKey)
+		answerMap, numAnswers = buildAnswerMap(answerKey)
 	}
 
-	metrics := recMatchJob.Metrics
+	metrics := recMatchRun.Metrics
 
 	logger.Log.WithFields(logrus.Fields{
 		"metrics": metrics}).Info("calcMetrics")
 
-	//expectedResourceType := recMatchJob.RecordResourceType
+	//expectedResourceType := recMatchRun.RecordResourceType
 	matchCount := 0
 	truePositiveCount := 0
 	falsePositiveCount := 0
@@ -117,19 +117,20 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 		"matchCount":    matchCount}).Info("calcMetrics")
 
 	metrics.MatchCount += matchCount
-	if answerKey != nil && totalResults > 0 {
+	// if there is an answer key w/ answers and some results were processed
+	if answerKey != nil && numAnswers > 0 && matchCount > 0 {
 		metrics.TruePositiveCount += truePositiveCount
 		metrics.FalsePositiveCount += falsePositiveCount
 		metrics.Precision = float32(metrics.TruePositiveCount) / float32(metrics.TruePositiveCount+metrics.FalsePositiveCount)
-		metrics.Recall = float32(metrics.TruePositiveCount) / float32(totalResults)
+		metrics.Recall = float32(metrics.TruePositiveCount) / float32(numAnswers)
 		metrics.F1 = 2.0 * ((metrics.Precision * metrics.Recall) / (metrics.Precision + metrics.Recall))
 	}
 
 	now := time.Now()
 
-	c := db.C(ptm_models.GetCollectionName("RecordMatchJob"))
+	c := db.C(ptm_models.GetCollectionName("RecordMatchRun"))
 	// Add an entry to the record match run status and update lastUpdatedOn
-	err := c.UpdateId(recMatchJob.ID,
+	err := c.UpdateId(recMatchRun.ID,
 		bson.M{
 			"$currentDate": bson.M{"meta.lastUpdatedOn": bson.M{"$type": "timestamp"}},
 			"$set":         bson.M{"metrics": metrics},
@@ -140,7 +141,7 @@ func calcMetrics(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob,
 
 	if err != nil {
 		logger.Log.WithFields(logrus.Fields{"msg": "Error updating metrics in record match run",
-			"rec match run ID": recMatchJob.ID,
+			"rec match run ID": recMatchRun.ID,
 			"error":            err}).Warn("calcMetrics")
 		return err
 	}
@@ -157,21 +158,21 @@ func indexOf(s []string, e string) int {
 	return -1
 }
 
-func getAnswerKey(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob) (*fhir_models.Bundle, error) {
+func getAnswerKey(db *mgo.Database, recMatchRun *ptm_models.RecordMatchRun) (*fhir_models.Bundle, error) {
 	var answerKey *fhir_models.Bundle
 
 	// If deduplication mode, try to find an answer key w/ the master record set
-	if recMatchJob.MatchingMode == ptm_models.Deduplication {
+	if recMatchRun.MatchingMode == ptm_models.Deduplication {
 		masterRecSet := &ptm_models.RecordSet{}
 		c := db.C(ptm_models.GetCollectionName("RecordSet"))
 		// retrieve the master record set
 		err := c.Find(
-			bson.M{"_id": recMatchJob.MasterRecordSetID}).One(masterRecSet)
+			bson.M{"_id": recMatchRun.MasterRecordSetID}).One(masterRecSet)
 		if err != nil {
-			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchJob",
+			logger.Log.WithFields(logrus.Fields{"func": "updateRecordMatchRun",
 				"err":          err,
 				"msg":          "Unable to find master record set",
-				"record setid": recMatchJob.MasterRecordSetID}).Warn("calcMetrics")
+				"record setid": recMatchRun.MasterRecordSetID}).Warn("calcMetrics")
 			return nil, err
 		}
 
@@ -184,7 +185,7 @@ func getAnswerKey(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob) (*fh
 			logger.Log.WithFields(logrus.Fields{
 				"answer key entries": len(masterRecSet.AnswerKey.Entry)}).Info("calcMetrics")
 		}
-	} else if recMatchJob.MatchingMode == ptm_models.Query {
+	} else if recMatchRun.MatchingMode == ptm_models.Query {
 		logger.Log.WithFields(logrus.Fields{
 			"msg": "Calculating Metrics for Query Mode Not Supoprted"}).Warn("calcMetrics")
 		return nil, nil
@@ -194,7 +195,7 @@ func getAnswerKey(db *mgo.Database, recMatchJob *ptm_models.RecordMatchJob) (*fh
 }
 
 func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int) {
-	totalResults := 0
+	numAnswers := 0
 	m := make(map[string]*groundTruth)
 	for i, entry := range answerKey.Entry {
 		//		rtype := reflect.TypeOf(entry.Resource)
@@ -228,7 +229,7 @@ func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int
 								item.linkedURLs[0] = linkedURL
 								item.numFound[0] = 1
 								m[refURL] = item
-								totalResults++
+								numAnswers++
 							}
 						}
 					}
@@ -236,7 +237,7 @@ func buildAnswerMap(answerKey *fhir_models.Bundle) (map[string]*groundTruth, int
 			}
 		}
 	}
-	return m, totalResults
+	return m, numAnswers
 }
 
 type groundTruth struct {

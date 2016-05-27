@@ -53,14 +53,14 @@ func NewSliceForResourceName(name string, len int, cap int) interface{} {
 func StructForResourceName(name string) interface{} {
 	logger.Log.WithFields(logrus.Fields{"name": name}).Debug("StructForResourceName")
 	switch name {
-	case "RecordMatchConfiguration":
-		return RecordMatchConfiguration{}
+	case "RecordMatchContext":
+		return RecordMatchContext{}
 	case "RecordMatchRequest":
 		return RecordMatchRequest{}
 	case "RecordMatchResponse":
 		return RecordMatchResponse{}
-	case "RecordMatchJob":
-		return RecordMatchJob{}
+	case "RecordMatchRun":
+		return RecordMatchRun{}
 	case "RecordMatchSystemInterface":
 		return RecordMatchSystemInterface{}
 	case "RecordSet":
@@ -208,7 +208,7 @@ func LoadResourceFromFile(fileName string, resource interface{}) {
 	r := &resource
 	err = decoder.Decode(r)
 	if err != nil {
-		logger.Log.WithFields(logrus.Fields{"resource": resource, "error" : err}).Warn("LoadResourceFromFile")
+		logger.Log.WithFields(logrus.Fields{"resource": resource, "error": err}).Warn("LoadResourceFromFile")
 		util.WarnErr(err)
 	}
 

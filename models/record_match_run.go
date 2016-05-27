@@ -22,16 +22,17 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
-type RecordMatchJob struct {
-	ID                         bson.ObjectId                   `bson:"_id,omitempty" json:"id,omitempty"`
-	Meta                       *Meta                           `bson:"meta,omitempty" json:"meta,omitempty"`
-	Note                       string                          `bson:"note,omitempty" json:"note,omitempty"`
-	RecordMatchConfigurationID bson.ObjectId                   `bson:"recordMatchConfigurationId,omitempty" json:"recordMatchConfigurationId,omitempty"`
-	Request                    RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
-	Responses                  []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
-	Metrics                    RecordMatchJobMetrics           `bson:"metrics,omitempty" json:"metrics,omitempty"`
-	Status                     []RecordMatchJobStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
-	MatchingMode               string                          `bson:"matchingMode,omitempty" json:"matchingMode,omitempty"`
+type RecordMatchRun struct {
+	ID                   bson.ObjectId                   `bson:"_id,omitempty" json:"id,omitempty"`
+	Meta                 *Meta                           `bson:"meta,omitempty" json:"meta,omitempty"`
+	Note                 string                          `bson:"note,omitempty" json:"note,omitempty"`
+	RecordMatchContextID bson.ObjectId                   `bson:"recordMatchContextId,omitempty" json:"recordMatchContextId,omitempty"`
+	Request              RecordMatchRequest              `bson:"request,omitempty" json:"request,omitempty"`
+	Responses            []RecordMatchResponse           `bson:"responses,omitempty" json:"responses,omitempty"`
+	Metrics              RecordMatchRunMetrics           `bson:"metrics,omitempty" json:"metrics,omitempty"`
+	Status               []RecordMatchRunStatusComponent `bson:"status,omitempty" json:"status,omitempty"`
+	// ideally, deduplication or query
+	MatchingMode string `bson:"matchingMode,omitempty" json:"matchingMode,omitempty"`
 	// fhir resource type of the records being matched (e.g., Patient)
 	RecordResourceType string `bson:"recordResourceType,omitempty" json:"recordResourceType,omitempty"`
 	// reference to the record matching system interface
@@ -40,9 +41,9 @@ type RecordMatchJob struct {
 	QueryRecordSetID             bson.ObjectId `bson:"queryRecordSetId,omitempty" json:"queryRecordSetId,omitempty"`
 }
 
-// RecordMatchJobMetrics contains statistics associated with the results reported
+// RecordMatchRunMetrics contains statistics associated with the results reported
 // by a record matching system.
-type RecordMatchJobMetrics struct {
+type RecordMatchRunMetrics struct {
 	F1                 float32 `bson:"f1,omitempty" json:"f1,omitempty"`
 	Precision          float32 `bson:"precision,omitempty" json:"precision,omitempty"`
 	Recall             float32 `bson:"recall,omitempty" json:"recall,omitempty"`
@@ -54,7 +55,7 @@ type RecordMatchJobMetrics struct {
 	MAP                float32 `bson:"MAP,omitempty" json:"MAP,omitempty"`
 }
 
-type RecordMatchJobStatusComponent struct {
+type RecordMatchRunStatusComponent struct {
 	Message   string    `bson:"message" json:"message"`
 	CreatedOn time.Time `bson:"createdOn,omitempty" json:"createdOn,omitempty"`
 }

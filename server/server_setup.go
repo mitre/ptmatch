@@ -22,10 +22,10 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/thoas/stats"
 
-	"gopkg.in/mgo.v2"
 	rc "github.com/mitre/ptmatch/controllers"
 	logger "github.com/mitre/ptmatch/logger"
 	mw "github.com/mitre/ptmatch/middleware"
+	"gopkg.in/mgo.v2"
 
 	fhir_svr "github.com/intervention-engine/fhir/server"
 )
@@ -74,7 +74,7 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	controller := rc.ResourceController{}
 	controller.DatabaseProvider = Database
 
-	resourceNames := []string{"RecordMatchConfiguration",
+	resourceNames := []string{"RecordMatchContext",
 		"RecordMatchSystemInterface", "RecordSet"}
 
 	for _, name := range resourceNames {
@@ -87,12 +87,12 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 
 	svr.Engine.POST("/AnswerKey", controller.SetAnswerKey)
 
-	name := "RecordMatchJob"
+	name := "RecordMatchRun"
 	svr.Engine.GET("/"+name, controller.GetResources)
 	svr.Engine.GET("/"+name+"/:id", controller.GetResource)
-	svr.Engine.POST("/"+name, controller.CreateRecordMatchJob)
+	svr.Engine.POST("/"+name, controller.CreateRecordMatchRun)
 	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 
-	svr.Engine.GET("/RecordMatchJobMetrics", controller.GetRecordMatchJobMetrics)
+	svr.Engine.GET("/RecordMatchRunMetrics", controller.GetRecordMatchRunMetrics)
 }
