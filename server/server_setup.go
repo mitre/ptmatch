@@ -95,4 +95,6 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 
 	svr.Engine.GET("/RecordMatchRunMetrics", controller.GetRecordMatchRunMetrics)
+
+	svr.Engine.Static("/ptmatch/api/", "api")
 }
