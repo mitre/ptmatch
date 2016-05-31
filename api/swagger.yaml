@@ -1,0 +1,672 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Swagger Specification for Patient Match Test Harness
+#
+# Copyright (c) 2016.  The MITRE Corporation. All rights reserved.
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+swagger: '2.0'
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#                  API Information
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+info:
+  version: "0.1.0"
+  title: Patient Match Test Harness REST API
+  description: |
+    The vertical bar seems to denote a multi-line entry 
+    that is "magically" terminated by the next field name.
+    Note that __Markdown is supported__ in the text field.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0
+  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#   Host, service Base Path, Schemes and Content Types
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#host: api.instagram.com
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+consumes:
+  - application/json
+  
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#           Paths
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+paths:
+  /AnswerKey:
+    post:
+      operationId: createAnswerKey
+      summary: Set Answer Key
+      tags:
+        - RecordSet
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: recordSetId
+          in: formData
+          description: Identifier of record set with which to associate the answer key
+          required: true
+          type: string
+        - name: answerKey
+          in: formData
+          description: uploaded FHIR Document as a JSON file that represents the answer key
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+
+  /RecordMatchContext:
+    get:
+      operationId: getRecordMatchContexts
+      summary: Get Record Match Contexts
+      tags:
+        - RecordMatchContext
+      description: |
+        Returns collection of `RecordMatchContext` objects.
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: createRecordMatchContext
+      summary: Create Record Match Context
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: recordMatchContext
+          in: body
+          description: Record Match Context to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchContext/{id}:
+    get:
+      operationId: getRecordMatchContextById
+      summary: Get one Record Match Context by Id
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to fetch
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    put:
+      operationId: updateRecordMatchContext
+      summary: Update Record Match Context
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchContext
+      summary: Delete Record Match Context
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRun:
+    get:
+      operationId: getRecordMatchRuns
+      summary: Get Record Match Runs
+      tags:
+        - RecordMatchRun
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchRun'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: createRecordMatchRun
+      summary: Create Record Match Run
+      tags:
+        - RecordMatchRun
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRun/{id}:
+    get:
+      operationId: getRecordMatchRunById
+      summary: Get one Record Match Run by Id
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: resource identifier 
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchRun'
+    put:
+      operationId: updateRecordMatchRun
+      summary: Update Record Match Run
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: resource identifier 
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchRun'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchRun
+      summary: Delete Record Match Run
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: resource identifier 
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRunMetrics:
+    get:
+      summary: Record Match Run Metrics
+      tags:
+        - RecordMatchRun
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchRunMetrics'
+
+  /RecordMatchSystemInterface:
+    get:
+      summary: Record Match System Interfaces
+      tags:
+        - RecordMatchSystemInterface
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchSystemInterface'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: createRecordMatchSystemInterface
+      summary: Create Record Match System Interface
+      tags:
+        - RecordMatchSystemInterface
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchSystemInterface/{id}:
+    get:
+      operationId: getRecordMatchSystemInterfaceById
+      summary: Get one Record Match System Interface by Id
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to fetch
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterface'
+    put:
+      operationId: updateRecordMatchSystemInterface
+      summary: Update Record Match System Interface
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterface'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchSystemInterface
+      summary: Delete Record Match System Interface
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordSet:
+    get:
+      operationId: getRecordSets
+      summary: Get Record Sets
+      tags:
+        - RecordSet
+      responses:
+        200:
+          description: Success
+          schema:
+            type: array
+            items:
+              $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: createRecordSet
+      summary: Create Record Set
+      tags:
+        - RecordSet
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordSet/{id}:
+    get:
+      operationId: getRecordSetById
+      summary: Get one Record Set by Id
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to fetch
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordSet'
+    put:
+      operationId: updateRecordSet
+      summary: Update Record Set
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordSet
+      summary: Delete Record Set
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  # This is a path endpoint. Change it.
+  /persons:
+    # This is a HTTP operation
+    get:
+      # Describe this verb here. Note: you can use markdown
+      description: |
+        Gets `Person` objects.
+        Optional query param of **size** determines
+        size of returned array
+      # This is array of GET operation parameters:
+      parameters:
+        # An example parameter that is in query and is required
+        -
+          name: size
+          in: query
+          description: Size of array
+          required: true
+          type: number
+          format: double
+      # Expected responses for this operation:
+      responses:
+        # Response code
+        200:
+          description: Successful response
+          # A schema describing your response object.
+          # Use JSON Schema format
+          schema:
+            title: ArrayOfPersons
+            type: array
+            items:
+              title: Person
+              type: object
+              properties:
+                name:
+                  type: string
+                single:
+                  type: boolean
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+#                       Definitions
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+definitions:
+  RecordMatchContext:
+    type: object
+    description: |
+      A Record Match Context provides a way to group Record
+      Match Runs that are related in some way.
+    required:
+    - id
+    - name
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      name:
+        type: string
+      description:
+        type: string
+
+  RecordMatchRequest:
+    type: object
+    description: |
+      A Record Match Context encapsulates the FHIR message
+      generated to request a record match operation.
+    required:
+    - id
+    - message
+    - submittedOn
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      message:
+        $ref: '#/definitions/Bundle'
+      submittedOn:
+        type: string
+        format: date-time
+        description: date and time at which the message was sent to the record match system (via a FHIR server acting as a message broker.
+
+  RecordMatchResponse:
+    type: object
+    required:
+    - id
+    - message
+    - receivedOn
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      message:
+        $ref: '#/definitions/Bundle'
+      receivedOn:
+        type: string
+        format: date-time
+        description: date and time at which the message was received from the record match system (via a FHIR server acting as a message broker.
+
+  RecordMatchRun:
+    type: object
+    description: |
+      A Record Match Run encapsulates all data associated
+      with a record match run, including the context, the
+      generated request message, response messages, metrics,
+      and status.
+    required:
+    - id
+    - matchingMode
+    - masterRecordSetId
+    properties:
+      id:
+        type: string
+      matchingMode:
+        type: string
+        pattern: query|deduplication
+        description: string literal, 'deduplication' or 'query'
+      meta:
+        $ref: '#/definitions/Meta'
+      metrics:
+        $ref: '#/definitions/RecordMatchRunMetrics'
+      note:
+        type: string
+      recordMatchContextId:
+        type: string
+        enum: ['query', 'deduplication']
+      recordMatchSystemInterfaceId:
+        type: string
+      masterRecordSetId:
+        type: string
+      queryRecordSetId:
+        type: string
+      recordResourceType:
+        type: string
+      request:
+        $ref: '#/definitions/RecordMatchRequest'
+      responses:
+        type: array
+        items:
+          $ref: '#/definitions/RecordMatchResponse'
+      status:
+        type: array
+        items:
+          $ref: '#/definitions/RecordMatchRunStatusComponent'
+        
+  RecordMatchRunMetrics:
+    type: object
+    properties:
+      f1:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+      precision:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+      recall:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+      MAP:
+        type: number
+        format: float
+      matchCount:
+        type: integer
+        minimum: 0
+      truePositiveCount:
+        type: integer
+        minimum: 0
+      falsePositiveCount:
+        type: integer
+        minimum: 0
+        
+  RecordMatchSystemInterface:
+    type: object
+    required:
+    - id
+    - name
+    - destinationEndpoint
+    - responseEndpoint
+    - serverEndpoint
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      name:
+        type: string
+      description:
+        type: string
+      destinationEndpoint:
+        type: string
+      responseEndpoint:
+        type: string
+      serverEndpoint:
+        type: string
+
+  RecordMatchRunStatusComponent:
+    type: object
+
+  RecordSet:
+    type: object
+    required:
+    - id
+    - name
+    - resourceType
+    - parameters
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      name:
+        type: string
+      description:
+        type: string
+      resourceType:
+        type: string
+      answerKey:
+        $ref: '#/definitions/Bundle'
+      parameters:
+        $ref: '#/definitions/Parameters'
+
+  Bundle:
+    type: object
+
+  Meta:
+    type: object
+    properties:
+      createdOn: 
+        description: date and time at which the resource was created.
+        type: string
+        format: date-time
+      lastUpdatedOn: 
+        type: string
+        format: date-time
+
+  Parameters:
+    type: object
+

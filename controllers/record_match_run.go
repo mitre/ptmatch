@@ -43,7 +43,7 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *gin.Context) {
 	obj := ptm_models.NewStructForResourceName(resourceType)
 	recMatchRun := obj.(*ptm_models.RecordMatchRun)
 	if err := ctx.Bind(recMatchRun); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -56,9 +56,6 @@ func (rc *ResourceController) CreateRecordMatchRun(ctx *gin.Context) {
 
 	// retrieve and validate the record match context
 	recMatchContextID := recMatchRun.RecordMatchContextID
-	logger.Log.WithFields(
-		logrus.Fields{"method": "CreateRecordMatchRun",
-			"recMatchContextID": recMatchContextID}).Debug("check recmatch config id")
 	if !recMatchContextID.Valid() {
 		// Bad Request: Record Match Context is optional but must be valid, if provided
 		ctx.String(http.StatusBadRequest, "Invalid RecordMatchContextID")
