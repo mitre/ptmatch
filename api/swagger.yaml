@@ -96,7 +96,7 @@ paths:
           description: Record Match Context to add
           required: true
           schema:
-            $ref: '#/definitions/RecordMatchContext'
+            $ref: '#/definitions/RecordMatchContextBase'
       responses:
         201:
           description: Resource Created
@@ -137,6 +137,12 @@ paths:
           description: Identifier of resource to update
           required: true
           type: string
+        - name: recordMatchContext
+          in: body
+          description: Record Match Context to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchContextBase'
       responses:
         200:
           description: Success
@@ -221,6 +227,12 @@ paths:
           description: resource identifier 
           required: true
           type: string
+        - name: recordMatchRun
+          in: body
+          description: Record Match Run to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchRunBase'
       responses:
         200:
           description: Success
@@ -281,6 +293,13 @@ paths:
       summary: Create Record Match System Interface
       tags:
         - RecordMatchSystemInterface
+      parameters:
+        - name: recordSystemInterface
+          in: body
+          description: Record System Interface to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterfaceBase'
       responses:
         201:
           description: Resource Created
@@ -321,7 +340,7 @@ paths:
         200:
           description: Success
           schema:
-            $ref: '#/definitions/RecordMatchSystemInterface'
+            $ref: '#/definitions/RecordMatchSystemInterfaceBase'
         400:
           description: Bad Request
         500:
@@ -365,6 +384,13 @@ paths:
       summary: Create Record Set
       tags:
         - RecordSet
+      parameters:
+        - name: recordSet
+          in: body
+          description: Record Set to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordSetBase'
       responses:
         201:
           description: Resource Created
@@ -401,6 +427,12 @@ paths:
           description: Identifier of resource to update
           required: true
           type: string
+        - name: recordSet
+          in: body
+          description: Record Set to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordSetBase'
       responses:
         200:
           description: Success
@@ -469,23 +501,30 @@ paths:
 #                       Definitions
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
 definitions:
-  RecordMatchContext:
+  RecordMatchContextBase:
     type: object
     description: |
       A Record Match Context provides a way to group Record
       Match Runs that are related in some way.
     required:
-    - id
     - name
     properties:
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/Meta'
       name:
         type: string
       description:
         type: string
+
+  RecordMatchContext:
+    allOf:
+    - $ref: '#/definitions/RecordMatchContextBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
 
   RecordMatchRequest:
     type: object
@@ -526,7 +565,7 @@ definitions:
         format: date-time
         description: date and time at which the message was received from the record match system (via a FHIR server acting as a message broker.
 
-  RecordMatchRun:
+  RecordMatchRunBase:
     type: object
     description: |
       A Record Match Run encapsulates all data associated
@@ -534,18 +573,13 @@ definitions:
       generated request message, response messages, metrics,
       and status.
     required:
-    - id
     - matchingMode
     - masterRecordSetId
     properties:
-      id:
-        type: string
       matchingMode:
         type: string
         pattern: query|deduplication
         description: string literal, 'deduplication' or 'query'
-      meta:
-        $ref: '#/definitions/Meta'
       metrics:
         $ref: '#/definitions/RecordMatchRunMetrics'
       note:
@@ -561,6 +595,8 @@ definitions:
         type: string
       recordResourceType:
         type: string
+        enum:
+        - Patient
       request:
         $ref: '#/definitions/RecordMatchRequest'
       responses:
@@ -571,7 +607,19 @@ definitions:
         type: array
         items:
           $ref: '#/definitions/RecordMatchRunStatusComponent'
-        
+
+  RecordMatchRun:
+    allOf:
+    - $ref: '#/definitions/RecordMatchRunBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+
   RecordMatchRunMetrics:
     type: object
     properties:
@@ -603,19 +651,14 @@ definitions:
         type: integer
         minimum: 0
         
-  RecordMatchSystemInterface:
+  RecordMatchSystemInterfaceBase:
     type: object
     required:
-    - id
     - name
     - destinationEndpoint
     - responseEndpoint
     - serverEndpoint
     properties:
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/Meta'
       name:
         type: string
       description:
@@ -627,31 +670,65 @@ definitions:
       serverEndpoint:
         type: string
 
+  RecordMatchSystemInterface:
+    allOf:
+    - $ref: '#/definitions/RecordMatchSystemInterfaceBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+
   RecordMatchRunStatusComponent:
     type: object
+    required:
+    - message
+    - createdOn
+    properties:
+      message:
+        type: string
+      createdOn:
+        type: string
+        format: date-time
+        description: date and time at which the status message was created
 
-  RecordSet:
+  RecordSetBase:
     type: object
     required:
-    - id
     - name
     - resourceType
     - parameters
     properties:
-      id:
-        type: string
-      meta:
-        $ref: '#/definitions/Meta'
       name:
         type: string
       description:
         type: string
       resourceType:
         type: string
+        enum:
+        - Patient
       answerKey:
-        $ref: '#/definitions/Bundle'
+        $ref: '#/definitions/AnswerKeyBundle'
       parameters:
         $ref: '#/definitions/Parameters'
+
+  RecordSet:
+    allOf:
+    - $ref: '#/definitions/RecordSetBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+
+  AnswerKeyBundle:
+    type: object
 
   Bundle:
     type: object
