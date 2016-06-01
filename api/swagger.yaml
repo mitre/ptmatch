@@ -541,7 +541,7 @@ definitions:
       meta:
         $ref: '#/definitions/Meta'
       message:
-        $ref: '#/definitions/Bundle'
+        $ref: '#/definitions/MessageBundle'
       submittedOn:
         type: string
         format: date-time
@@ -559,7 +559,7 @@ definitions:
       meta:
         $ref: '#/definitions/Meta'
       message:
-        $ref: '#/definitions/Bundle'
+        $ref: '#/definitions/MessageBundle'
       receivedOn:
         type: string
         format: date-time
@@ -713,7 +713,7 @@ definitions:
       answerKey:
         $ref: '#/definitions/AnswerKeyBundle'
       parameters:
-        $ref: '#/definitions/Parameters'
+        $ref: '#/definitions/RecordSetParameters'
 
   RecordSet:
     allOf:
@@ -727,12 +727,6 @@ definitions:
         meta:
           $ref: '#/definitions/Meta'
 
-  AnswerKeyBundle:
-    type: object
-
-  Bundle:
-    type: object
-
   Meta:
     type: object
     properties:
@@ -744,6 +738,225 @@ definitions:
         type: string
         format: date-time
 
+  FhirBundle:
+    type: object
+    required:
+      - id
+      - resourceType
+    externalDocs:
+      description: FHIR Resource Bundle - Content
+      url: https://www.hl7.org/fhir/bundle.html
+    properties:
+      id:
+        type: string
+        format: uuid
+      resourceType:
+        type: string
+        enum:
+        - Bundle
+      entry:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          type: object
+          required:
+            - fullUrl
+          properties:
+            fhir_comments:
+              type: array
+              items:
+                properties: {}
+            fullUrl:
+              type: string
+              minLength: 1
+            link:
+              type: array
+              uniqueItems: true
+              minItems: 1
+              items:
+                required:
+                  - relation
+                  - url
+                properties:
+                  fhir_comments:
+                    type: array
+                    items:
+                      properties: {}
+                  relation:
+                    type: string
+                    minLength: 1
+                  url:
+                    type: string
+                    minLength: 1
+            resource:
+              type: object
+              properties:
+                resourceType:
+                  type: string
+                  minLength: 1
+                id:
+                  type: string
+                  minLength: 1
+                text:
+                  type: object
+                  properties:
+                    fhir_comments:
+                      type: array
+                      items:
+                        properties: {}
+                    status:
+                      type: string
+                      minLength: 1
+                    div:
+                      type: string
+                      minLength: 1
+                  required:
+                    - status
+                    - div
+              required:
+                - resourceType
+                - id
+                - text
+            search:
+              type: object
+              properties:
+                fhir_comments:
+                  type: array
+                  items:
+                    properties: {}
+                mode:
+                  type: string
+                  minLength: 1
+                _mode:
+                  type: object
+                  properties:
+                    fhir_comments:
+                      type: array
+                      items:
+                        properties: {}
+                score:
+                  type: number
+                _score:
+                  type: object
+                  properties:
+                    fhir_comments:
+                      type: array
+                      items:
+                        properties: {}
+              required:
+                - mode
+                - _mode
+                - score
+                - _score
+
+  AnswerKeyBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/FhirBundle'
+    - type: object
+    properties:
+      type:
+        type: string
+        enum:
+        - document
+
+  MessageBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/FhirBundle'
+    - type: object
+    properties:
+      type:
+        type: string
+        enum:
+        - message
+
+  SearchExpressionParameters:
+    allOf:
+    - $ref: '#/definitions/Parameters'
+    - type: object
+    properties:
+      parameter:
+        type: array
+        items:
+          title: Parameter
+          type: object
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              enum:
+              - active
+              - address
+              - address-city
+              - address-country
+              - address-postalcode
+              - address-state
+              - address-use
+              - animal-breed
+              - animal-species
+              - birthdate
+              # careprovider - unsupported?
+              - deathdate
+              - deceased
+              - email
+              - family
+              - gender
+              - given
+              - identifier
+              - language
+              #- link - unsupported?
+              - name
+              #- orgazniation - unsupported?
+              - phone
+              #- phonetic - unsupported?
+              - telecom
+            valueBoolean:
+              type: boolean
+            valueString:
+              type: string
+            valueToken:
+              type: string
+            valueInteger:
+              type: integer
+
   Parameters:
     type: object
+    properties:
+      resourceType:
+        type: string
+        enum:
+        - Parameters
+            
+  RecordSetParameters:
+    allOf:
+    - $ref: '#/definitions/Parameters'
+    - type: object
+    properties:
+      parameter:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          title: Parameter
+          type: object
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              enum:
+              - type
+              - resourceType
+              - searchExpression
+            valueString:
+              type: string
+              enum:
+              - master
+              - query
+              - Patient
+            resource:
+              $ref: '#/definitions/SearchExpressionParameters'
 
