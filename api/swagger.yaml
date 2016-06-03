@@ -105,6 +105,7 @@ paths:
         500:
           description: Internal Server Error
 
+    
   /RecordMatchContext/{id}:
     get:
       operationId: getRecordMatchContextById
@@ -182,6 +183,347 @@ paths:
             type: array
             items:
               $ref: '#/definitions/RecordMatchRun'
+            example:
+            - id: 5746f0aea291023b0db67632
+              meta:
+                createdOn: '2016-05-26T08:48:46.713-04:00'
+                lastUpdatedOn: '0001-01-01T00:00:00Z'
+              recordMatchContextId: 5746e836a291023b0db67629
+              request:
+                id: 5746f0aea291023b0db67630
+                meta:
+                  createdOn: '2016-05-26T08:48:46.709-04:00'
+                  lastUpdatedOn: '0001-01-01T00:00:00Z'
+                message:
+                  resourceType: Bundle
+                  id: 5746f0aea291023b0db67631
+                  type: message
+                  entry:
+                    - fullUrl: 'urn:uuid:c0bd82da-ae27-48bd-bf92-841db6d55e92'
+                      resource:
+                        _id: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                        data:
+                          - reference: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                        destination:
+                          - endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                        event:
+                          code: record-match
+                          system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                        resourceType: MessageHeader
+                        source:
+                          endpoint: 'http://mitre.org/ptmatch'
+                        timestamp:
+                          precision: timestamp
+                          time: '2016-05-26T08:48:46.703-04:00'
+                    - fullUrl: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                      resource:
+                        _id: 8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1
+                        parameter:
+                          - name: type
+                            valueString: master
+                          - name: resourceType
+                            valueString: Patient
+                          - name: searchExpression
+                            resource:
+                              parameter:
+                                - name: resourceUrl
+                                  valueString: 'http://localhost:3001/Patient'
+                                - name: gender
+                                  valueString: MALE
+                                - name: address-city
+                                  valueString: Grand Rapids
+                                - name: address-state
+                                  valueString: MI
+                              resourceType: Parameters
+                        resourceType: Parameters
+                submittedOn: '0001-01-01T00:00:00Z'
+              responses:
+                - id: 5746f0cba7fc203dc7e46428
+                  meta:
+                    createdOn: '2016-05-26T08:49:15.679-04:00'
+                    lastUpdatedOn: '2016-05-26T08:49:15.679-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5746f0cba7fc203dc7e46428
+                    meta:
+                      lastUpdated: '2016-05-26T08:49:15-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 687fd9dd-2d06-4936-a0af-71c8ede80268
+                        resource:
+                          _id: 5746f0cba7fc203dc7e46429
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: ptmatchAdapter-fril
+                          timestamp:
+                            precision: timestamp
+                            time: '2016-05-26T08:49:15.581-04:00'
+                  receivedOn: '2016-05-26T08:49:15.679-04:00'
+                - id: 5746f0cba7fc203dc7e4642a
+                  meta:
+                    createdOn: '2016-05-26T08:49:15.774-04:00'
+                    lastUpdatedOn: '2016-05-26T08:49:15.774-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5746f0cba7fc203dc7e4642a
+                    meta:
+                      lastUpdated: '2016-05-26T08:49:15-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 'urn:uuid:8f9a03c7-ccd7-4f19-b3c4-fb75c9f8559d'
+                        resource:
+                          _id: 5746f0cba7fc203dc7e4642b
+                          data:
+                            - external: false
+                              reference: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: fatal-error
+                            identifier: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                          timestamp:
+                            precision: timestamp
+                            time: '2016-05-26T08:49:15.66-04:00'
+                      - fullUrl: 'urn:uuid:00428457-13a6-45ea-8a12-43ebb7ad945b'
+                        resource:
+                          _id: 5746f0cba7fc203dc7e4642c
+                          issue:
+                            - code: informational
+                              diagnostics: 'Error response from server.  code: 500, HTTP 500 Internal Server Error: '
+                              severity: information
+                          resourceType: OperationOutcome
+                      - fullUrl: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                        resource:
+                          _id: 8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1
+                          parameter:
+                            - name: type
+                              valueString: master
+                            - name: resourceType
+                              valueString: Patient
+                            - name: searchExpression
+                              resource:
+                                parameter:
+                                  - name: resourceUrl
+                                    valueString: 'http://localhost:3001/Patient'
+                                  - name: gender
+                                    valueString: MALE
+                                  - name: address-city
+                                    valueString: Grand Rapids
+                                  - name: address-state
+                                    valueString: MI
+                                resourceType: Parameters
+                          resourceType: Parameters
+                  receivedOn: '2016-05-26T08:49:15.774-04:00'
+              metrics: {}
+              status:
+                - message: 'Request Sent [201 Created]'
+                  createdOn: '2016-05-26T08:48:46.712-04:00'
+                - message: 'Response Received [5746f0cba7fc203dc7e46428]'
+                  createdOn: '2016-05-26T08:49:15.679-04:00'
+                - message: 'Metrics Updated [5746f0cba7fc203dc7e46428]'
+                  createdOn: '2016-05-26T08:49:15.699-04:00'
+                - message: 'Response Received [5746f0cba7fc203dc7e4642a]'
+                  createdOn: '2016-05-26T08:49:15.774-04:00'
+                - message: 'Metrics Updated [5746f0cba7fc203dc7e4642a]'
+                  createdOn: '2016-05-26T08:49:15.788-04:00'
+              matchingMode: deduplication
+              recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+              masterRecordSetId: 572b66b8a291021cbcb5e0fb
+            - id: 57502376a29102405f406255
+              meta:
+                createdOn: '2016-06-02T08:15:50.726-04:00'
+                lastUpdatedOn: '0001-01-01T00:00:00Z'
+              recordMatchContextId: 5746e836a291023b0db67629
+              request:
+                id: 57502376a29102405f406253
+                meta:
+                  createdOn: '2016-06-02T08:15:50.636-04:00'
+                  lastUpdatedOn: '0001-01-01T00:00:00Z'
+                message:
+                  resourceType: Bundle
+                  id: 57502376a29102405f406254
+                  type: message
+                  entry:
+                    - fullUrl: 'urn:uuid:64af6aa4-0321-4516-843b-6d4514a56d3d'
+                      resource:
+                        _id: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                        data:
+                          - reference: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                        destination:
+                          - endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                        event:
+                          code: record-match
+                          system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                        resourceType: MessageHeader
+                        source:
+                          endpoint: 'http://mitre.org/ptmatch'
+                        timestamp:
+                          precision: timestamp
+                          time: '2016-06-02T08:15:50.598-04:00'
+                    - fullUrl: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                      resource:
+                        _id: ff483dfa-b959-4eff-8751-6c09634d27d4
+                        parameter:
+                          - name: type
+                            valueString: master
+                          - name: resourceType
+                            valueString: Patient
+                          - name: searchExpression
+                            resource:
+                              parameter:
+                                - name: resourceUrl
+                                  valueString: 'http://localhost:3001/Patient'
+                                - name: gender
+                                  valueString: MALE
+                                - name: address-city
+                                  valueString: Grand Rapids
+                                - name: address-state
+                                  valueString: MI
+                              resourceType: Parameters
+                        resourceType: Parameters
+                submittedOn: '0001-01-01T00:00:00Z'
+              responses:
+                - id: 5750238da7fc204288bba7f5
+                  meta:
+                    createdOn: '2016-06-02T08:16:13.432-04:00'
+                    lastUpdatedOn: '2016-06-02T08:16:13.432-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5750238da7fc204288bba7f5
+                    meta:
+                      lastUpdated: '2016-06-02T08:16:13-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 47e20619-7c2d-49ff-9142-537977288b40
+                        resource:
+                          _id: 5750238da7fc204288bba7f6
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: ptmatchAdapter-fril
+                          timestamp:
+                            precision: timestamp
+                            time: '2016-06-02T08:16:13.296-04:00'
+                  receivedOn: '2016-06-02T08:16:13.432-04:00'
+                - id: 5750238ea7fc204288bba7f7
+                  meta:
+                    createdOn: '2016-06-02T08:16:14.381-04:00'
+                    lastUpdatedOn: '2016-06-02T08:16:14.381-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5750238ea7fc204288bba7f7
+                    meta:
+                      lastUpdated: '2016-06-02T08:16:14-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 'urn:uuid:e43cbbf0-11ed-4d65-b91a-f153d4067096'
+                        resource:
+                          _id: 5750238ea7fc204288bba7f8
+                          data:
+                            - external: false
+                              reference: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                          timestamp:
+                            precision: timestamp
+                            time: '2016-06-02T08:16:14.343-04:00'
+                      - fullUrl: 'urn:uuid:f3d647d9-536b-4ca8-aeaf-2099b077f36f'
+                        resource:
+                          _id: 5750238ea7fc204288bba7f9
+                          issue:
+                            - code: informational
+                              details:
+                                text: Deduplication Complete
+                              severity: information
+                          resourceType: OperationOutcome
+                      - fullUrl: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                        resource:
+                          _id: ff483dfa-b959-4eff-8751-6c09634d27d4
+                          parameter:
+                            - name: type
+                              valueString: master
+                            - name: resourceType
+                              valueString: Patient
+                            - name: searchExpression
+                              resource:
+                                parameter:
+                                  - name: resourceUrl
+                                    valueString: 'http://localhost:3001/Patient'
+                                  - name: gender
+                                    valueString: MALE
+                                  - name: address-city
+                                    valueString: Grand Rapids
+                                  - name: address-state
+                                    valueString: MI
+                                resourceType: Parameters
+                          resourceType: Parameters
+                      - link:
+                          - relation: type
+                            url: 'http://hl7.org/fhir/Patient'
+                          - relation: related
+                            url: 'http://localhost:3001/Patient/5733977ca291026adcf58526'
+                        fullUrl: 'http://localhost:3001/Patient/56cc7f83a291024d6fd5e87f'
+                        search:
+                          extension:
+                            - url: 'http://hl7.org/fhir/StructureDefinition/patient-mpi-match'
+                              valueCode: probable
+                          score: 0.71
+                  receivedOn: '2016-06-02T08:16:14.381-04:00'
+              metrics:
+                f1: 1
+                matchCount: 1
+                falsePositiveCount: 1
+              status:
+                - message: 'Request Sent [201 Created]'
+                  createdOn: '2016-06-02T08:15:50.725-04:00'
+                - message: 'Response Received [5750238da7fc204288bba7f5]'
+                  createdOn: '2016-06-02T08:16:13.432-04:00'
+                - message: 'Metrics Updated [5750238da7fc204288bba7f5]'
+                  createdOn: '2016-06-02T08:16:13.487-04:00'
+                - message: 'Response Received [5750238ea7fc204288bba7f7]'
+                  createdOn: '2016-06-02T08:16:14.381-04:00'
+                - message: 'Metrics Updated [5750238ea7fc204288bba7f7]'
+                  createdOn: '2016-06-02T08:16:14.397-04:00'
+              matchingMode: deduplication
+              recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+              masterRecordSetId: 572b66b8a291021cbcb5e0fb
+
         400:
           description: Bad Request
         404:
@@ -191,6 +533,13 @@ paths:
       summary: Create Record Match Run
       tags:
         - RecordMatchRun
+      parameters:
+        - name: body
+          in: body
+          description: Parameters for starting a Record Match Run 
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchRunBase'
       responses:
         201:
           description: Resource Created
@@ -513,6 +862,9 @@ definitions:
         type: string
       description:
         type: string
+    example:
+      name: Local FRIL; Grand Rapids Males; Team A
+      description: Context for Team A; Objective 1
 
   RecordMatchContext:
     allOf:
@@ -578,35 +930,32 @@ definitions:
     properties:
       matchingMode:
         type: string
-        pattern: query|deduplication
+        enum:
+          - query
+          - deduplication
         description: string literal, 'deduplication' or 'query'
-      metrics:
-        $ref: '#/definitions/RecordMatchRunMetrics'
       note:
         type: string
       recordMatchContextId:
         type: string
-        enum: ['query', 'deduplication']
       recordMatchSystemInterfaceId:
         type: string
+        minLength: 1
       masterRecordSetId:
         type: string
+        minLength: 1
       queryRecordSetId:
         type: string
+        minLength: 1
       recordResourceType:
         type: string
         enum:
         - Patient
-      request:
-        $ref: '#/definitions/RecordMatchRequest'
-      responses:
-        type: array
-        items:
-          $ref: '#/definitions/RecordMatchResponse'
-      status:
-        type: array
-        items:
-          $ref: '#/definitions/RecordMatchRunStatusComponent'
+    example:
+      recordMatchContextId: 5746e836a291023b0db67629
+      recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+      matchingMode: deduplication
+      masterRecordSetId: 572b66b8a291021cbcb5e0fb
 
   RecordMatchRun:
     allOf:
@@ -619,6 +968,18 @@ definitions:
           type: string
         meta:
           $ref: '#/definitions/Meta'
+        request:
+          $ref: '#/definitions/RecordMatchRequest'
+        responses:
+          type: array
+          items:
+            $ref: '#/definitions/RecordMatchResponse'
+        metrics:
+          $ref: '#/definitions/RecordMatchRunMetrics'
+        status:
+          type: array
+          items:
+            $ref: '#/definitions/RecordMatchRunStatusComponent'
 
   RecordMatchRunMetrics:
     type: object
@@ -888,6 +1249,7 @@ definitions:
             name:
               type: string
               enum:
+              - resourceUrl
               - active
               - address
               - address-city
@@ -929,7 +1291,7 @@ definitions:
         type: string
         enum:
         - Parameters
-            
+
   RecordSetParameters:
     allOf:
     - $ref: '#/definitions/Parameters'
@@ -959,4 +1321,3 @@ definitions:
               - Patient
             resource:
               $ref: '#/definitions/SearchExpressionParameters'
-
