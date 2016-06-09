@@ -5,23 +5,23 @@
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 swagger: '2.0'
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                  API Information
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 info:
   version: "0.1.0"
   title: Patient Match Test Harness REST API
   description: |
-    The vertical bar seems to denote a multi-line entry 
+    The vertical bar seems to denote a multi-line entry
     that is "magically" terminated by the next field name.
     Note that __Markdown is supported__ in the text field.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0
-  
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #   Host, service Base Path, Schemes and Content Types
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #host: api.instagram.com
 schemes:
   - http
@@ -30,14 +30,14 @@ produces:
   - application/json
 consumes:
   - application/json
-  
+
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #           Paths
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 paths:
   /AnswerKey:
     post:
-      operationId: createAnswerKey
+      operationId: setAnswerKey
       summary: Set Answer Key
       tags:
         - RecordSet
@@ -51,9 +51,9 @@ paths:
           type: string
         - name: answerKey
           in: formData
-          description: uploaded FHIR Document as a JSON file that represents the answer key
+          description: uploaded FHIR Bundle of type  Document as a JSON file that represents the answer key.  The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
           required: true
-          type: string
+          type: file
       responses:
         200:
           description: Success
@@ -105,7 +105,7 @@ paths:
         500:
           description: Internal Server Error
 
-    
+
   /RecordMatchContext/{id}:
     get:
       operationId: getRecordMatchContextById
@@ -536,7 +536,7 @@ paths:
       parameters:
         - name: body
           in: body
-          description: Parameters for starting a Record Match Run 
+          description: Parameters for starting a Record Match Run
           required: true
           schema:
             $ref: '#/definitions/RecordMatchRunBase'
@@ -557,7 +557,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier 
+          description: resource identifier
           required: true
           type: string
       responses:
@@ -573,7 +573,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier 
+          description: resource identifier
           required: true
           type: string
         - name: recordMatchRun
@@ -599,7 +599,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier 
+          description: resource identifier
           required: true
           type: string
       responses:
@@ -765,6 +765,255 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/RecordSet'
+          examples:
+            application/json:
+              id: 572b66b8a291021cbcb5e0fb
+              meta:
+                createdOn: '2016-05-05T11:28:56.761-04:00'
+                lastUpdatedOn: '2016-05-05T11:28:56.761-04:00'
+              name: 'Males in Grand Rapids,MI'
+              description: 'Male Patients with current address in Grand Rapids, MI'
+              resourceType: Patient
+              answerKey:
+                resourceType: Bundle
+                id: 541a72a8-df75-4484-ac89-ac4923f03b81
+                meta:
+                  lastUpdated: '2016-05-28T18:12:21-04:00'
+                type: document
+                entry:
+                  - fullUrl: 'http://localhost:3001/Composition/180f219f-97a8-486d-99d9-ed631fe4fc57'
+                    resource:
+                      id: 180f219f-97a8-486d-99d9-ed631fe4fc57
+                      attester:
+                        - mode:
+                            - professional
+                          time: '2016-05-28T18:12:21-04:00'
+                          party:
+                            display: Good Health Clinic
+                            external: false
+                            reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                            referenceid: 2.16.840.1.113883.19.5
+                            type: Organization
+                      author:
+                        - display: Doctor Adam
+                          external: false
+                          reference: Practitioner/example
+                          referenceid: example
+                          type: Practitioner
+                      confidentiality: 'N'
+                      date:
+                        precision: timestamp
+                        time: '2016-02-01T07:30:02-05:00'
+                      meta:
+                        lastUpdated:
+                          precision: timestamp
+                          time: '2016-05-28T18:12:21-04:00'
+                      resourceType: Composition
+                      section:
+                        - code:
+                            coding:
+                              - code: 10001-2
+                                display: Matching Record
+                                system: 'https://github.com/mitre/ptmatch'
+                          entry:
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
+                            - external: false
+                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
+                          mode: final
+                          title: Matching Records
+                        - code:
+                            coding:
+                              - code: 10001-3
+                                display: Record Set Description
+                                system: 'https://github.com/mitre/ptmatch'
+                          entry:
+                            - external: false
+                              reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                          title: Record Set Description
+                      status: final
+                      subject:
+                        display: Males in Grand Rapids Record Set
+                        external: true
+                        reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
+                      title: Answer Key
+                      type:
+                        coding:
+                          - code: 10001-1
+                            system: 'https://github.com/mitre/ptmatch'
+                        text: Collection of Matching Records
+                  - fullUrl: 'http://localhost:3001/Practitioner/example'
+                    resource:
+                      id: example
+                      identifier:
+                        - system: 'http://www.acme.org/practitioners'
+                          value: '23'
+                      meta:
+                        lastUpdated:
+                          precision: timestamp
+                          time: '2016-05-05T12:13:03-04:00'
+                      name:
+                        family:
+                          - Careful
+                        given:
+                          - Adam
+                        prefix:
+                          - Dr
+                      resourceType: Practitioner
+                  - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                    resource:
+                      resourceType: Organization
+                      id: 2.16.840.1.113883.19.5
+                      text:
+                        status: generated
+                        div: |-
+                          <div>
+
+                           <p>Good Health Clinic</p>
+
+                          </div>
+                      identifier:
+                        - system: 'urn:ietf:rfc:3986'
+                          value: 2.16.840.1.113883.19.5
+                      name: Good Health Clinic
+                  - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                    resource:
+                      id: b89450ff-31ae-46f7-a305-580a323b16be
+                      parameter:
+                        - name: type
+                          valueString: master
+                        - name: resourceType
+                          valueString: Patient
+                        - name: searchExpression
+                          resource:
+                            parameter:
+                              - name: resourceUrl
+                                valueString: 'http://localhost:3001/Patient'
+                              - name: gender
+                                valueString: MALE
+                              - name: address-city
+                                valueString: Grand Rapids
+                              - name: address-state
+                                valueString: MI
+                            resourceType: Parameters
+                      resourceType: Parameters
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf9994'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a0d'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b7'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a07'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99f8'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a03'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b8'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99fa'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99f5'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf99a8'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf99a9'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
+                    search:
+                      score: 1
+                signature:
+                  type:
+                    - system: 'http://hl7.org/fhir/valueset-signature-type'
+                      code: 1.2.840.10065.1.12.1.1
+                      display: AuthorID
+                  when: '2016-05-30T17:42:33-04:00'
+                  whoReference:
+                    reference: Device/software
+                  contentType: image/jpg
+                  blob: /9j/4AA Signature Blog goes here en//2Q==
+
     put:
       operationId: updateRecordSet
       summary: Update Record Set
@@ -846,9 +1095,9 @@ paths:
                 single:
                   type: boolean
 
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                       Definitions
-# # # # # # # # # # # # # # # # # # # # # # # # # # # # # 
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 definitions:
   RecordMatchContextBase:
     type: object
@@ -1011,7 +1260,7 @@ definitions:
       falsePositiveCount:
         type: integer
         minimum: 0
-        
+
   RecordMatchSystemInterfaceBase:
     type: object
     required:
@@ -1091,11 +1340,11 @@ definitions:
   Meta:
     type: object
     properties:
-      createdOn: 
+      createdOn:
         description: date and time at which the resource was created.
         type: string
         format: date-time
-      lastUpdatedOn: 
+      lastUpdatedOn:
         type: string
         format: date-time
 
@@ -1175,10 +1424,6 @@ definitions:
                   required:
                     - status
                     - div
-              required:
-                - resourceType
-                - id
-                - text
             search:
               type: object
               properties:
@@ -1213,6 +1458,8 @@ definitions:
 
   AnswerKeyBundle:
     type: object
+    description: |
+      An answer key specifies the links between matching records in the corresponding record set.  An answer key is represented as a FHIR Document, which is a FHIR Bundle with type, document.
     allOf:
     - $ref: '#/definitions/FhirBundle'
     - type: object
