@@ -30,4 +30,6 @@ type RecordMatchContext struct {
 	Name string `bson:"name,omitempty" json:"name,omitempty"`
 	// descriptive remarks assoc. w/ this interface to the record match system
 	Description string `bson:"description,omitempty" json:"description,omitempty"`
+	// distinguishes bewteen different context types (e.g., benchmark, challenge)
+	Type string `bson:"type,omitempty" json:"type,omitempty"`
 }
