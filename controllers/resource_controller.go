@@ -39,6 +39,10 @@ import (
 	"gopkg.in/mgo.v2/bson"
 )
 
+var SearchParams = map[string][]string{
+	"RecordMatchRun": []string{"recordMatchContextId"},
+}
+
 type ResourceController struct {
 	DatabaseProvider func() *mgo.Database
 }
@@ -58,7 +62,10 @@ func (rc *ResourceController) GetResources(ctx *gin.Context) {
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	// retrieve all documents in the collection
 	// TODO Restrict this to resourc type, just to be extra safe
-	err := c.Find(bson.M{}).All(resources)
+	query := buildSearchQuery(resourceType, ctx)
+	logger.Log.WithFields(
+		logrus.Fields{"query": query}).Info("GetResources")
+	err := c.Find(query).All(resources)
 	if err != nil {
 		if err == mgo.ErrNotFound {
 			ctx.String(http.StatusNotFound, "Not Found")
@@ -380,6 +387,22 @@ func (rc *ResourceController) SetAnswerKey(ctx *gin.Context) {
 	} else {
 		ctx.AbortWithStatus(400)
 	}
+}
+
+func buildSearchQuery(resourceType string, ctx *gin.Context) bson.M {
+	query := bson.M{}
+	acceptableParams := SearchParams[resourceType]
+	for _, param := range acceptableParams {
+		paramValue := ctx.Query(param)
+		if paramValue != "" {
+			if strings.HasSuffix(param, "Id") && bson.IsObjectIdHex(paramValue) {
+				query[param] = bson.ObjectIdHex(paramValue)
+			} else {
+				query[param] = paramValue
+			}
+		}
+	}
+	return query
 }
 
 func isValidAnswerKey(b fhir_models.Bundle) bool {

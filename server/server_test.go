@@ -29,6 +29,7 @@ import (
 
 	"github.com/Sirupsen/logrus"
 	"github.com/gin-gonic/gin"
+	"github.com/pebbe/util"
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 
@@ -69,6 +70,14 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 		fhir_svr.Config{})
 }
 
+// Clean the database between each test run to avoid conflict
+func (s *ServerSuite) TearDownTest(c *C) {
+	fhir_svr.Database.C("recordMatchRuns").DropCollection()
+	fhir_svr.Database.C("recordMatchContexts").DropCollection()
+	fhir_svr.Database.C("recordMatchSystemInterfaces").DropCollection()
+	fhir_svr.Database.C("recordSets").DropCollection()
+}
+
 func (s *ServerSuite) TestEchoRoutes(c *C) {
 	e := gin.New()
 
@@ -102,6 +111,19 @@ func (s *ServerSuite) TestEchoRoutes(c *C) {
 		c.Assert(routes[i].Method, Equals, r.Method)
 		c.Assert(routes[i].Path, Equals, r.Path)
 	}
+}
+
+func (s *ServerSuite) TestSearch(c *C) {
+	ptm_models.InsertResourceFromFile(Database(), "RecordMatchRun", "../fixtures/record-match-run-01.json")
+	ptm_models.InsertResourceFromFile(Database(), "RecordMatchRun", "../fixtures/record-match-run-02.json")
+	code, body := request("GET", "/RecordMatchRun?recordMatchContextId=56a21d9aa291020ca7dd225f", nil, "", s.Server.Engine)
+	c.Assert(code, Equals, http.StatusOK)
+	decoder := json.NewDecoder(bytes.NewBufferString(body))
+	var runs []ptm_models.RecordMatchRun
+	err := decoder.Decode(&runs)
+	util.CheckErr(err)
+	c.Assert(len(runs), Equals, 1)
+
 }
 
 func (s *ServerSuite) TestGetRecordMatchContexts(c *C) {
