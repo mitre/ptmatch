@@ -12,9 +12,29 @@ info:
   version: "0.1.0"
   title: Patient Match Test Harness REST API
   description: |
-    The vertical bar seems to denote a multi-line entry
-    that is "magically" terminated by the next field name.
-    Note that __Markdown is supported__ in the text field.
+    This REST API provides access to resources managed by an instance of the Patient Match Test Harness.  These services can be used to construct an alternative user interface to the test harness server.
+
+    ### Principal Resources
+    The API provides direct access to the following resources.
+    - Record Set
+      - represensts a population of Patient Records
+    - Record Match Context
+      - groups a collection of related record match runs
+    - Record Match Run
+      - encapsuplates everything associated with one run performed by a record matching system.  This includes the input record set, the request message sent to the record matching system, and the matching results received in record match response messages.
+    - Record Match Run Metrics
+      - select metrics associated with the record match results.  These  include the number of duplicates found, F1 measure, Precision and Recall.  The specific set of reported metrics depends on specific test use cases.
+    - Record Match System Interface
+      - describes network endpoint to a record matching system
+
+    The relationships between these resources and structures within them are depicted in the following diagram.
+    ![Resource Relationships](ResourceRelationships.png "Resource Relationships")
+
+    ### Additional Information
+    - [ptmatch GitHub site]("https\://github.com/mitre/ptmatch/")
+    - [ptmatch-frontend GitHub site]("https\://github.com/mitre/ptmatch-frontend/")
+    - [Record Matching System Interface]("http\://mitre.github.io/test-harness-interface/")
+
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0
@@ -30,6 +50,7 @@ produces:
   - application/json
 consumes:
   - application/json
+
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #           Paths
@@ -51,7 +72,7 @@ paths:
           type: string
         - name: answerKey
           in: formData
-          description: uploaded FHIR Bundle of type  Document as a JSON file that represents the answer key.  The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
+          description: JSON-formatted FHIR Bundle of type  Document that represents the answer key.  The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
           required: true
           type: file
       responses:
@@ -75,7 +96,7 @@ paths:
       tags:
         - RecordMatchContext
       description: |
-        Returns collection of `RecordMatchContext` objects.
+        Returns an array of Record Match Context objects.
       responses:
         200:
           description: Success
@@ -105,7 +126,6 @@ paths:
         500:
           description: Internal Server Error
 
-
   /RecordMatchContext/{id}:
     get:
       operationId: getRecordMatchContextById
@@ -115,7 +135,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Identifier of resource to fetch
+          description: Identifier of resource to retrieve
           required: true
           type: string
       responses:
@@ -180,6 +200,7 @@ paths:
         200:
           description: Success
           schema:
+            title: Record Match Run Response
             type: array
             items:
               $ref: '#/definitions/RecordMatchRun'
@@ -529,8 +550,8 @@ paths:
         404:
           description: Not Found
     post:
-      operationId: createRecordMatchRun
-      summary: Create Record Match Run
+      operationId: startRecordMatchRun
+      summary: Start Record Match Run
       tags:
         - RecordMatchRun
       parameters:
@@ -599,7 +620,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier
+          description: identifier of resource to delete
           required: true
           type: string
       responses:
@@ -610,6 +631,7 @@ paths:
 
   /RecordMatchRunMetrics:
     get:
+      operationId: getRecordMatchRunMetrics
       summary: Record Match Run Metrics
       tags:
         - RecordMatchRun
@@ -617,12 +639,14 @@ paths:
         200:
           description: Success
           schema:
+            title: Array of Record Match Run Metrics
             type: array
             items:
               $ref: '#/definitions/RecordMatchRunMetrics'
 
   /RecordMatchSystemInterface:
     get:
+      operationId: getRecordMatchSystemInterfaces
       summary: Record Match System Interfaces
       tags:
         - RecordMatchSystemInterface
@@ -638,8 +662,8 @@ paths:
         404:
           description: Not Found
     post:
-      operationId: createRecordMatchSystemInterface
-      summary: Create Record Match System Interface
+      operationId: addRecordMatchSystemInterface
+      summary: Add Record Match System Interface
       tags:
         - RecordMatchSystemInterface
       parameters:
@@ -666,7 +690,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Identifier of resource to fetch
+          description: Identifier of resource to retrieve
           required: true
           type: string
       responses:
@@ -729,8 +753,8 @@ paths:
         404:
           description: Not Found
     post:
-      operationId: createRecordSet
-      summary: Create Record Set
+      operationId: addRecordSet
+      summary: Add Record Set
       tags:
         - RecordSet
       parameters:
@@ -757,7 +781,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: Identifier of resource to fetch
+          description: Identifier of resource to retrieve
           required: true
           type: string
       responses:
@@ -1003,16 +1027,7 @@ paths:
                     fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
                     search:
                       score: 1
-                signature:
-                  type:
-                    - system: 'http://hl7.org/fhir/valueset-signature-type'
-                      code: 1.2.840.10065.1.12.1.1
-                      display: AuthorID
-                  when: '2016-05-30T17:42:33-04:00'
-                  whoReference:
-                    reference: Device/software
-                  contentType: image/jpg
-                  blob: /9j/4AA Signature Blog goes here en//2Q==
+
 
     put:
       operationId: updateRecordSet
@@ -1057,43 +1072,6 @@ paths:
         500:
           description: Internal Server Error
 
-  # This is a path endpoint. Change it.
-  /persons:
-    # This is a HTTP operation
-    get:
-      # Describe this verb here. Note: you can use markdown
-      description: |
-        Gets `Person` objects.
-        Optional query param of **size** determines
-        size of returned array
-      # This is array of GET operation parameters:
-      parameters:
-        # An example parameter that is in query and is required
-        -
-          name: size
-          in: query
-          description: Size of array
-          required: true
-          type: number
-          format: double
-      # Expected responses for this operation:
-      responses:
-        # Response code
-        200:
-          description: Successful response
-          # A schema describing your response object.
-          # Use JSON Schema format
-          schema:
-            title: ArrayOfPersons
-            type: array
-            items:
-              title: Person
-              type: object
-              properties:
-                name:
-                  type: string
-                single:
-                  type: boolean
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                       Definitions
@@ -1111,6 +1089,11 @@ definitions:
         type: string
       description:
         type: string
+      type:
+        type: string
+        enum:
+        - benchmark
+        - challenge
     example:
       name: Local FRIL; Grand Rapids Males; Team A
       description: Context for Team A; Objective 1
@@ -1126,6 +1109,14 @@ definitions:
           type: string
         meta:
           $ref: '#/definitions/Meta'
+    example:
+      id: 5746e836a291023b0db67629
+      type: challenge
+      name: Local FRIL; Grand Rapids Males; Team A
+      description: Context for Team A; Objective 1
+      meta:
+        createdOn: "2016-05-26T08:12:38.615-04:00"
+        lastUpdatedOn: "2016-05-26T08:12:38.615-04:00"
 
   RecordMatchRequest:
     type: object
@@ -1341,12 +1332,13 @@ definitions:
     type: object
     properties:
       createdOn:
-        description: date and time at which the resource was created.
         type: string
         format: date-time
+        description: date and time at which the resource was created.
       lastUpdatedOn:
         type: string
         format: date-time
+        description: date and time at which the resource was last updated.
 
   FhirBundle:
     type: object
