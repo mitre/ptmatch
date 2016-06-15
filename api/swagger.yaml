@@ -51,7 +51,6 @@ produces:
 consumes:
   - application/json
 
-
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #           Paths
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
@@ -1028,7 +1027,6 @@ paths:
                     search:
                       score: 1
 
-
     put:
       operationId: updateRecordSet
       summary: Update Record Set
@@ -1071,7 +1069,6 @@ paths:
           description: No Content
         500:
           description: Internal Server Error
-
 
 # # # # # # # # # # # # # # # # # # # # # # # # # # # # #
 #                       Definitions
