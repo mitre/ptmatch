@@ -61,7 +61,7 @@ func (rc *ResourceController) GetResources(ctx *gin.Context) {
 	resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 	c := rc.Database().C(ptm_models.GetCollectionName(resourceType))
 	// retrieve all documents in the collection
-	// TODO Restrict this to resourc type, just to be extra safe
+	// TODO Restrict this to resource type, just to be extra safe
 	query := buildSearchQuery(resourceType, ctx)
 	logger.Log.WithFields(
 		logrus.Fields{"query": query}).Info("GetResources")
@@ -125,7 +125,7 @@ func (rc *ResourceController) GetResource(ctx *gin.Context) {
 	// Validate id as a bson Object ID
 	id, err := toBsonObjectID(ctx.Param("id"))
 	if err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 	logger.Log.WithFields(
@@ -158,7 +158,7 @@ func (rc *ResourceController) CreateResource(ctx *gin.Context) {
 	resourceType := getResourceType(req.URL)
 	resource := ptm_models.NewStructForResourceName(resourceType)
 	if err := ctx.Bind(resource); err != nil {
-		ctx.AbortWithError(http.StatusInternalServerError, err)
+		ctx.AbortWithError(http.StatusBadRequest, err)
 		return
 	}
 
@@ -385,7 +385,7 @@ func (rc *ResourceController) SetAnswerKey(ctx *gin.Context) {
 
 		ctx.JSON(http.StatusOK, recordSet)
 	} else {
-		ctx.AbortWithStatus(400)
+		ctx.AbortWithStatus(http.StatusBadRequest)
 	}
 }
 
