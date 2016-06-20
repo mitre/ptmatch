@@ -1,0 +1,385 @@
+{
+  "resourceType": "Bundle",
+  "id": "541a72a8-df75-4484-ac89-ac4923f03b81",
+  "meta": {
+    "lastUpdated": "2016-05-28T18:12:21-04:00"
+  },
+  "type": "document",
+  "entry": [
+    {
+      "fullUrl": "http://localhost:3001/Composition/180f219f-97a8-486d-99d9-ed631fe4fc57",
+      "resource": {
+        "id": "180f219f-97a8-486d-99d9-ed631fe4fc57",
+        "attester": [
+          {
+            "mode": [
+              "professional"
+            ],
+            "time": "2016-05-28T18:12:21-04:00",
+            "party": {
+              "display": "Good Health Clinic",
+              "external": false,
+              "reference": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be",
+              "referenceid": "2.16.840.1.113883.19.5",
+              "type": "Organization"
+            }
+          }
+        ],
+        "author": [
+          {
+            "display": "Doctor Adam",
+            "external": false,
+            "reference": "Practitioner/example",
+            "referenceid": "example",
+            "type": "Practitioner"
+          }
+        ],
+        "confidentiality": "N",
+        "date": "2016-02-01T09:10:14Z",
+        "meta": {
+          "lastUpdated": "2016-05-28T18:12:21-04:00"
+        },
+        "resourceType": "Composition",
+        "section": [
+          {
+            "code": {
+              "coding": [
+                {
+                  "code": "10001-2",
+                  "display": "Matching Record",
+                  "system": "https://github.com/mitre/ptmatch"
+                }
+              ]
+            },
+            "entry": [
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56d5a89ca2910241fb142603"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99ea"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142626"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99e4"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d5"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99e0"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142627"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d7"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d2"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142617"
+              },
+              {
+                "external": false,
+                "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142618"
+              }
+            ],
+            "mode": "final",
+            "title": "Matching Records"
+          }
+        ],
+        "status": "final",
+        "subject": {
+          "display": "Males in Grand Rapids Record Set",
+          "external": false,
+          "reference": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be"
+        },
+        "title": "Answer Key",
+        "type": {
+          "coding": [
+            {
+              "code": "10001-1",
+              "system": "https://github.com/mitre/ptmatch"
+            }
+          ],
+          "text": "Collection of Matching Records"
+        }
+      }
+    },
+    {
+      "fullUrl": "http://localhost:3001/Practitioner/example",
+      "resource": {
+        "id": "example",
+        "identifier": [
+          {
+            "system": "http://www.acme.org/practitioners",
+            "value": "23"
+          }
+        ],
+        "meta": {
+          "lastUpdated": "2016-05-05T12:13:03-04:00"
+        }
+      },
+      "name": {
+        "family": [
+          "Careful"
+        ],
+        "given": [
+          "Adam"
+        ],
+        "prefix": [
+          "Dr"
+        ]
+      },
+      "resourceType": "Practitioner"
+    },
+    {
+      "fullUrl": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be",
+      "resource": {
+        "resourceType": "Organization",
+        "id": "2.16.840.1.113883.19.5",
+        "text": {
+          "status": "generated",
+          "div": "<div>\n \n <p>Good Health Clinic</p>\n \n</div>"
+        },
+        "identifier": [
+          {
+            "system": "urn:ietf:rfc:3986",
+            "value": "2.16.840.1.113883.19.5"
+          }
+        ],
+        "name": "Good Health Clinic"
+      }
+    },
+    {
+      "fullUrl": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be",
+      "resource": {
+        "id": "b89450ff-31ae-46f7-a305-580a323b16be",
+        "parameter": [
+          {
+            "name": "type",
+            "valueString": "master"
+          },
+          {
+            "name": "resourceType",
+            "valueString": "Patient"
+          },
+          {
+            "name": "searchExpression",
+            "resource": {
+              "parameter": [
+                {
+                  "name": "resourceUrl",
+                  "valueString": "http://localhost:3001/Patient"
+                },
+                {
+                  "name": "gender",
+                  "valueString": "MALE"
+                },
+                {
+                  "name": "address-city",
+                  "valueString": "Grand Rapids"
+                },
+                {
+                  "name": "address-state",
+                  "valueString": "MI"
+                }
+              ],
+              "resourceType": "Parameters"
+            }
+          }
+        ],
+        "resourceType": "Parameters"
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda163a29102104bbf9994"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56d5a89ca2910241fb142603",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf9a0d"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99ea",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda164a29102104bbf99b7"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56d5a89da2910241fb142626",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf9a07"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99e4",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf99f8"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99d5",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf9a03"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99e0",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda164a29102104bbf99b8"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56d5a89da2910241fb142627",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf99fa"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99d7",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda249a29102104bbf99f5"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56dda203a29102104bbf99d2",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda163a29102104bbf99a8"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56d5a89da2910241fb142617",
+      "search": {
+        "score": 1
+      }
+    },
+    {
+      "link": [
+        {
+          "relation": "type",
+          "url": "http://hl7.org/fhir/Patient"
+        },
+        {
+          "relation": "related",
+          "url": "http://localhost:3001/Patient/56dda163a29102104bbf99a9"
+        }
+      ],
+      "fullUrl": "http://localhost:3001/Patient/56d5a89da2910241fb142618",
+      "search": {
+        "score": 1
+      }
+    }
+  ]
+}

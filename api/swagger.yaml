@@ -14,27 +14,55 @@ info:
   description: |
     This REST API provides access to resources managed by an instance of the Patient Match Test Harness.  These services can be used to construct an alternative user interface to the test harness server.
 
-    ### Principal Resources
+    ## Principal Resources
     The API provides direct access to the following resources.
     - Record Set
-      - represensts a population of Patient Records
+      - represents a population of Patient Records that can be described using a FHIR Search Expression
+      - Answer Key
+        - Represented as a FHIR Document, an Answer Key describes the record
+        matches that are known to exist in the Record Set.
     - Record Match Context
       - groups a collection of related record match runs
     - Record Match Run
       - encapsuplates everything associated with one run performed by a record matching system.  This includes the input record set, the request message sent to the record matching system, and the matching results received in record match response messages.
     - Record Match Run Metrics
-      - select metrics associated with the record match results.  These  include the number of duplicates found, F1 measure, Precision and Recall.  The specific set of reported metrics depends on specific test use cases.
+      - select metrics associated with the record match results.  These  include the number of matches found, F1 measure, Precision and Recall.  The specific set of reported metrics depends on specific test use cases.
     - Record Match System Interface
       - describes network endpoint to a record matching system
 
-    The relationships between these resources and structures within them are depicted in the following diagram.
+    The relationships between these resources and other structures within them are depicted in the following diagram.
     ![Resource Relationships](ResourceRelationships.png "Resource Relationships")
 
-    ### Additional Information
-    - [ptmatch GitHub site]("https\://github.com/mitre/ptmatch/")
-    - [ptmatch-frontend GitHub site]("https\://github.com/mitre/ptmatch-frontend/")
-    - [Record Matching System Interface]("http\://mitre.github.io/test-harness-interface/")
+    ## Answer Key
+    An Answer Key may be associated with a Record Set.  An answer key contains
+    a collection of link entries that describe the record matches known to
+    exist in the record set.
 
+    An Answer Key is represented as a FHIR Document:
+      - A FHIR Document is a FHIR Bundle with type, document.
+      - The first entry in the bundle must contain a Composition resource.
+      Subsequent entries must be referenced from within the Composition entry.
+
+    The high level layout of an Answer Key is presented in the figure.
+
+    ![Answer Key Organization](AnswerKeyLayout.png "Answer Key Organization")
+
+    <a href="compositionResource.schema.json" target="_blank">Composition Resource JSON Schema</a>
+
+    ## Additional Information
+    * [ptmatch GitHub site](https://github.com/mitre/ptmatch/ "ptmatch GitHub Site")
+    * <a href="https://github.com/mitre/ptmatch/" target="_blank">ptmatch GitHub site</a>
+    * <a href="https://github.com/mitre/ptmatch-front-end/" target="_blank">ptmatch-frontend GitHub site</a>
+    - <a href="http://mitre.github.io/test-harness-interface/" target="_blank">pRecord Matching System Interface</a>
+    - Notes Related to FHIR
+      - <a href="https://www.hl7.org/fhir/bundle.html" target="_bundle">FHIR DSTU2 Resource Bundle</a>
+      - <a href="https://www.hl7.org/fhir/documents.html" target="_documents">FHIR DSTU2 FHIR Documents</a>
+      - <a href="https://www.hl7.org/fhir/composition.html" target="_composition">FHIR DSTU2 Resource Composition</a>
+      - Though not presented in the model schemas, the property fhir_comments,
+      is supported on those structures that represent FHIR Bundles. These include
+      AnswerKey, RecordMatchRequest, and RecordMatchResponse.
+      See <a href="https://www.hl7.org/fhir/json.html#xml" for information on
+      fhir_comments.
   license:
     name: Apache 2.0
     url: http://www.apache.org/licenses/LICENSE-2.0
@@ -78,9 +106,7 @@ paths:
         200:
           description: Success
           schema:
-            type: array
-            items:
-              $ref: '#/definitions/RecordSet'
+            $ref: '#/definitions/RecordSet'
         400:
           description: Bad Request
         404:
@@ -100,14 +126,17 @@ paths:
         200:
           description: Success
           schema:
-            $ref: '#/definitions/RecordMatchContext'
+            title: RecordMatchContexts
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchContext'
         400:
           description: Bad Request
         404:
           description: Not Found
     post:
-      operationId: createRecordMatchContext
-      summary: Create Record Match Context
+      operationId: addRecordMatchContext
+      summary: Add a Record Match Context
       tags:
         - RecordMatchContext
       parameters:
@@ -168,6 +197,10 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/RecordMatchContext'
+        201:
+          description: Resource Created
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
         400:
           description: Bad Request
         500:
@@ -175,6 +208,10 @@ paths:
     delete:
       operationId: deleteRecordMatchContext
       summary: Delete Record Match Context
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
       tags:
         - RecordMatchContext
       parameters:
@@ -195,11 +232,20 @@ paths:
       summary: Get Record Match Runs
       tags:
         - RecordMatchRun
+      parameters:
+        -
+          name: recordMatchContextId
+          in: query
+          description: |
+            Identifier of record match context to match.
+            Filters results to those runs associated with a specific context.
+          required: false
+          type: string
       responses:
         200:
           description: Success
           schema:
-            title: Record Match Run Response
+            title: RecordMatchRuns
             type: array
             items:
               $ref: '#/definitions/RecordMatchRun'
@@ -577,7 +623,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier
+          description: identifier of the resource to retrieve
           required: true
           type: string
       responses:
@@ -593,7 +639,7 @@ paths:
       parameters:
         - name: id
           in: path
-          description: resource identifier
+          description: identifier of resource to update
           required: true
           type: string
         - name: recordMatchRun
@@ -614,6 +660,10 @@ paths:
     delete:
       operationId: deleteRecordMatchRun
       summary: Delete Record Match Run
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
       tags:
         - RecordMatchRun
       parameters:
@@ -653,6 +703,7 @@ paths:
         200:
           description: Success
           schema:
+            title: RecordMatchSystemInterfaces
             type: array
             items:
               $ref: '#/definitions/RecordMatchSystemInterface'
@@ -697,6 +748,16 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/RecordMatchSystemInterface'
+          example:
+            id: 573344ec65ddb4272a7daff6
+            meta:
+              createdOn: 2016-05-11T10:42:52.927-04:00
+              lastUpdatedOn: 2016-05-11T10:42:52.927-04:00
+            name: FRIL - Equal Weight - Accept 60
+            description: FRIL on localhost.  Nearly Equal weights on all fields; accept = 60
+            destinationEndpoint: http://mitre.org/ptmatchadapter-fril
+            serverEndpoint: http://localhost:3001
+            responseEndpoint: http://mitre.org/ptmatch
     put:
       operationId: updateRecordMatchSystemInterface
       summary: Update Record Match System Interface
@@ -720,6 +781,10 @@ paths:
     delete:
       operationId: deleteRecordMatchSystemInterface
       summary: Delete Record Match System Interface
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
       tags:
         - RecordMatchSystemInterface
       parameters:
@@ -744,6 +809,7 @@ paths:
         200:
           description: Success
           schema:
+            title: RecordSets
             type: array
             items:
               $ref: '#/definitions/RecordSet'
@@ -1056,6 +1122,10 @@ paths:
     delete:
       operationId: deleteRecordSet
       summary: Delete Record Set
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
       tags:
         - RecordSet
       parameters:
@@ -1093,6 +1163,7 @@ definitions:
         - challenge
     example:
       name: Local FRIL; Grand Rapids Males; Team A
+      type: challenge
       description: Context for Team A; Objective 1
 
   RecordMatchContext:
@@ -1130,7 +1201,7 @@ definitions:
       meta:
         $ref: '#/definitions/Meta'
       message:
-        $ref: '#/definitions/MessageBundle'
+        $ref: '#/definitions/RecordMatchRequestMessageBundle'
       submittedOn:
         type: string
         format: date-time
@@ -1164,17 +1235,19 @@ definitions:
     required:
     - matchingMode
     - masterRecordSetId
+    - recordResourceType
     properties:
       matchingMode:
         type: string
         enum:
           - query
           - deduplication
-        description: string literal, 'deduplication' or 'query'
       note:
         type: string
+        description: human-friendly comment about the run
       recordMatchContextId:
         type: string
+        minLength: 1
       recordMatchSystemInterfaceId:
         type: string
         minLength: 1
@@ -1184,6 +1257,9 @@ definitions:
       queryRecordSetId:
         type: string
         minLength: 1
+        description: |
+          Provided only in query matchingMode;
+          describes the records being sought in the set of master records
       recordResourceType:
         type: string
         enum:
@@ -1193,6 +1269,7 @@ definitions:
       recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
       matchingMode: deduplication
       masterRecordSetId: 572b66b8a291021cbcb5e0fb
+      recordResourceType: Patient
 
   RecordMatchRun:
     allOf:
@@ -1226,25 +1303,30 @@ definitions:
         format: float
         minimum: 0
         maximum: 1
+        description: F1 Measure
       precision:
         type: number
         format: float
         minimum: 0
         maximum: 1
+        description:  fraction of retrieved instances that are relevant
       recall:
         type: number
         format: float
         minimum: 0
         maximum: 1
+        description: fraction of relevant instances that are retrieved
       MAP:
         type: number
         format: float
       matchCount:
         type: integer
         minimum: 0
+        description: number of postives reported by the record  matching system
       truePositiveCount:
         type: integer
         minimum: 0
+        description: number of true positives
       falsePositiveCount:
         type: integer
         minimum: 0
@@ -1267,6 +1349,12 @@ definitions:
         type: string
       serverEndpoint:
         type: string
+    example:
+      name: FRIL - Equal Weight - Accept 60
+      description: FRIL on localhost.  Nearly Equal weights on all fields; accept = 60
+      destinationEndpoint: http://mitre.org/ptmatchadapter-fril
+      serverEndpoint: http://localhost:3001
+      responseEndpoint: http://mitre.org/ptmatch
 
   RecordMatchSystemInterface:
     allOf:
@@ -1279,6 +1367,16 @@ definitions:
           type: string
         meta:
           $ref: '#/definitions/Meta'
+    example:
+      id: 57597375fb0482af6543f350
+      meta:
+        createdOn: 2016-05-11T10:42:52.927-04:00
+        lastUpdatedOn: 2016-05-11T10:42:52.927-04:00
+      name: OpenEMPI
+      description: OpenEMPI w/ localhost message broker
+      destinationEndpoint: http://mitre.org/ptmatchadapter-openempi
+      serverEndpoint: http://localhost:3001
+      responseEndpoint: http://mitre.org/ptmatch
 
   RecordMatchRunStatusComponent:
     type: object
@@ -1314,6 +1412,7 @@ definitions:
         $ref: '#/definitions/RecordSetParameters'
 
   RecordSet:
+    title: Record Set
     allOf:
     - $ref: '#/definitions/RecordSetBase'
     - type: object
@@ -1337,7 +1436,18 @@ definitions:
         format: date-time
         description: date and time at which the resource was last updated.
 
-  FhirBundle:
+  FhirMeta:
+    type: object
+    properties:
+      versionId:
+        type: string
+        pattern: ^[A-Za-z0-9\-\.]{1,64}^
+        minLength: 1
+        maxLength: 64
+      lastUpdated:
+        $ref: '#/definitions/FhirTimeInstant'
+
+  FhirBundleBase:
     type: object
     required:
       - id
@@ -1353,121 +1463,457 @@ definitions:
         type: string
         enum:
         - Bundle
-      entry:
+      meta:
+        $ref: '#/definitions/FhirMeta'
+      text:
+        $ref: '#/definitions/FhirNarrative'
+
+  FhirEntry:
+    title: Entry
+    type: object
+    required:
+      - fullUrl
+    properties:
+      fullUrl:
+        type: string
+        minLength: 1
+      link:
         type: array
         uniqueItems: true
         minItems: 1
         items:
-          type: object
-          required:
-            - fullUrl
-          properties:
-            fhir_comments:
-              type: array
-              items:
-                properties: {}
-            fullUrl:
-              type: string
-              minLength: 1
-            link:
-              type: array
-              uniqueItems: true
-              minItems: 1
-              items:
-                required:
-                  - relation
-                  - url
+          $ref: '#/definitions/FhirLink'
+      resource:
+        $ref: '#/definitions/FhirDomainResource'
+      search:
+        $ref: '#/definitions/FhirSearchResultInfo'
+
+  FhirDomainResource:
+    title: FhirDomainResource
+    type: object
+    required:
+      - resourceType
+    properties:
+      resourceType:
+        type: string
+        minLength: 1
+      id:
+        type: string
+        minLength: 1
+      text:
+        $ref: '#/definitions/FhirNarrative'
+
+  FhirTimeInstant:
+    type: string
+    pattern: ^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[0-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?$
+    description: |
+      an instant in time - known at least to the second
+      and always includes a time zone.
+
+  AnswerKeyResource:
+    title: Answer Key Resource
+    allOf:
+    - $ref: '#/definitions/FhirDomainResource'
+    - type: object
+      properties:
+        attester:
+          type: array
+          items:
+            type: object
+            properties:
+              mode:
+                type: array
+                items:
+                  type: string
+              time:
+                type: string
+              party:
+                type: object
                 properties:
-                  fhir_comments:
+                  display:
+                    type: string
+                  external:
+                    type: boolean
+                  reference:
+                    type: string
+                  referenceid:
+                    type: string
+                  type:
+                    type: string
+        author:
+          type: array
+          items:
+            type: object
+            properties:
+              display:
+                type: string
+              external:
+                type: boolean
+              reference:
+                type: string
+              referenceid:
+                type: string
+              type:
+                type: string
+        confidentiality:
+          type: string
+        date:
+          $ref: '#/definitions/FhirTimeInstant'
+        section:
+          type: array
+          items:
+            type: object
+            properties:
+              code:
+                type: object
+                properties:
+                  coding:
                     type: array
                     items:
-                      properties: {}
-                  relation:
-                    type: string
-                    minLength: 1
-                  url:
-                    type: string
-                    minLength: 1
-            resource:
-              type: object
-              properties:
-                resourceType:
-                  type: string
-                  minLength: 1
-                id:
-                  type: string
-                  minLength: 1
-                text:
+                      type: object
+                      properties:
+                        code:
+                          type: string
+                        display:
+                          type: string
+                        system:
+                          type: string
+              entry:
+                type: array
+                items:
                   type: object
                   properties:
-                    fhir_comments:
-                      type: array
-                      items:
-                        properties: {}
-                    status:
+                    external:
+                      type: boolean
+                    reference:
                       type: string
-                      minLength: 1
-                    div:
-                      type: string
-                      minLength: 1
-                  required:
-                    - status
-                    - div
-            search:
-              type: object
-              properties:
-                fhir_comments:
-                  type: array
-                  items:
-                    properties: {}
-                mode:
-                  type: string
-                  minLength: 1
-                _mode:
-                  type: object
-                  properties:
-                    fhir_comments:
-                      type: array
-                      items:
-                        properties: {}
-                score:
-                  type: number
-                _score:
-                  type: object
-                  properties:
-                    fhir_comments:
-                      type: array
-                      items:
-                        properties: {}
-              required:
-                - mode
-                - _mode
-                - score
-                - _score
+              mode:
+                type: string
+              title:
+                type: string
+        status:
+          type: string
+        subject:
+          type: object
+          properties:
+            display:
+              type: string
+            external:
+              type: boolean
+            reference:
+              type: string
+        title:
+          type: string
+        type:
+          type: object
+          properties:
+            coding:
+              type: array
+              items:
+                type: object
+                properties:
+                  code:
+                    type: string
+                  system:
+                    type: string
+            text:
+              type: string
+
+  FhirLink:
+    title: FhirLink
+    type: object
+    required:
+      - relation
+      - url
+    properties:
+      relation:
+        type: string
+        minLength: 1
+      url:
+        type: string
+        minLength: 1
+
+  FhirSearchResultInfo:
+    title: Search Result Info
+    type: object
+    properties:
+      mode:
+        type: string
+        enum:
+          - match
+      score:
+        type: number
+    required:
+      - mode
+      - score
+
+
+  FhirNarrative:
+    type: object
+    description: A human-readable formatted text
+    properties:
+      status:
+        type: string
+        enum:
+          - generated
+          - extensions
+          - additional
+          - empty
+        description: status of the narrative - whether it's entirely generated (from just the defined data or the extensions too), or whether a human authored it and it may contain additional data
+      div:
+        type: string
+        minLength: 1
+        description:  narrative content, a stripped down version of (escaped) XHTML
+    required:
+      - status
+      - div
+
+  AnswerKeyEntry:
+    title: Entry
+    type: object
+    required:
+      - fullUrl
+    properties:
+      fullUrl:
+        type: string
+        minLength: 1
+      link:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/FhirLink'
+      resource:
+        $ref: '#/definitions/AnswerKeyResource'
+      search:
+        $ref: '#/definitions/FhirSearchResultInfo'
+
 
   AnswerKeyBundle:
     type: object
     description: |
-      An answer key specifies the links between matching records in the corresponding record set.  An answer key is represented as a FHIR Document, which is a FHIR Bundle with type, document.
+      An answer key specifies the links between matching records
+      in the corresponding record set.  An answer key is represented as a
+      FHIR Document, which is a FHIR Bundle with type, document.
     allOf:
-    - $ref: '#/definitions/FhirBundle'
+    - $ref: '#/definitions/FhirBundleBase'
     - type: object
     properties:
       type:
         type: string
         enum:
         - document
+      entry:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/AnswerKeyEntry'
+    example:
+      resourceType: Bundle
+      id: 541a72a8-df75-4484-ac89-ac4923f03b81
+      meta:
+        lastUpdated: '2016-05-28T18:12:21-04:00'
+      type: document
+      entry:
+        - fullUrl: 'http://localhost:3001/Composition/180f219f-97a8-486d-99d9-ed631fe4fc57'
+          resource:
+            id: 180f219f-97a8-486d-99d9-ed631fe4fc57
+            attester:
+              - mode:
+                  - professional
+                time: '2016-05-28T18:12:21-04:00'
+                party:
+                  display: Good Health Clinic
+                  external: false
+                  reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                  referenceid: 2.16.840.1.113883.19.5
+                  type: Organization
+            author:
+              - display: Doctor Adam
+                external: false
+                reference: Practitioner/example
+                referenceid: example
+                type: Practitioner
+            confidentiality: 'N'
+            date: '2016-02-01T07:30:02-05:00'
+            meta:
+              lastUpdated: '2016-02-28T18:12:21-04:00'
+            resourceType: Composition
+            section:
+              - code:
+                  coding:
+                    - code: 10001-2
+                      display: Matching Record
+                      system: 'https://github.com/mitre/ptmatch'
+                entry:
+                  - external: false
+                    reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                  - external: false
+                    reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                  - external: false
+                    reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                mode: final
+                title: Matching Records
+              - code:
+                  coding:
+                    - code: 10001-3
+                      display: Record Set Description
+                      system: 'https://github.com/mitre/ptmatch'
+                entry:
+                  - external: false
+                    reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                title: Record Set Description
+            status: final
+            subject:
+              display: Males in Grand Rapids Record Set
+              external: true
+              reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
+            title: Answer Key
+            type:
+              coding:
+                - code: 10001-1
+                  system: 'https://github.com/mitre/ptmatch'
+              text: Collection of Matching Records
+        - fullUrl: 'http://localhost:3001/Practitioner/example'
+          resource:
+            id: example
+            identifier:
+              - system: 'http://www.acme.org/practitioners'
+                value: '23'
+            meta:
+              lastUpdated: '2016-05-05T12:13:03-04:00'
+            name:
+              family:
+                - Careful
+              given:
+                - Adam
+              prefix:
+                - Dr
+            resourceType: Practitioner
+        - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+          resource:
+            resourceType: Organization
+            id: 2.16.840.1.113883.19.5
+            text:
+              status: generated
+              div: |-
+                <div>
+
+                 <p>Good Health Clinic</p>
+
+                </div>
+            identifier:
+              - system: 'urn:ietf:rfc:3986'
+                value: 2.16.840.1.113883.19.5
+            name: Good Health Clinic
+        - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+          resource:
+            id: b89450ff-31ae-46f7-a305-580a323b16be
+            parameter:
+              - name: type
+                valueString: master
+              - name: resourceType
+                valueString: Patient
+              - name: searchExpression
+                resource:
+                  parameter:
+                    - name: resourceUrl
+                      valueString: 'http://localhost:3001/Patient'
+                    - name: gender
+                      valueString: MALE
+                    - name: address-city
+                      valueString: Grand Rapids
+                    - name: address-state
+                      valueString: MI
+                  resourceType: Parameters
+            resourceType: Parameters
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda163a29102104bbf9994'
+          fullUrl: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+          search:
+            score: 1
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a0d'
+          fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+          search:
+            score: 1
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b7'
+          fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+          search:
+            score: 1
 
   MessageBundle:
     type: object
     allOf:
-    - $ref: '#/definitions/FhirBundle'
+    - $ref: '#/definitions/FhirBundleBase'
     - type: object
     properties:
       type:
         type: string
         enum:
         - message
+      entry:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/FhirEntry'
+
+  RecordMatchRequestMessageBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/MessageBundle'
+    - type: object
+    example:
+      resourceType: Bundle
+      id: 5734b3173dc37e49116e4ee0
+      type: message
+      entry:
+      - fullUrl: urn:uuid:a41975cb-c961-4d17-9a06-8c49c95877c2
+        resource:
+          _id: a41975cb-c961-4d17-9a06-8c49c95877c2
+          data:
+          - reference: urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708
+          destination:
+          - endpoint: http://mitre.org/ptmatchadapter-fril
+            name: FRIL - Equal Weight - Accept 60
+          event:
+            code: record-match
+            system: http://github.com/mitre/ptmatch/fhir/message-events
+          resourceType: MessageHeader
+          source:
+            endpoint: http://mitre.org/ptmatch
+          timestamp:
+            precision: timestamp
+            time: '2016-05-12T12:45:11.42-04:00'
+      - fullUrl: urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708
+        resource:
+          _id: 5062ba92-9ceb-467c-9894-8024f5629708
+          parameter:
+          - name: type
+            valueString: master
+          - name: resourceType
+            valueString: Patient
+          - name: searchExpression
+            resource:
+              parameter:
+              - name: resourceUrl
+                valueString: http://localhost:3001/Patient
+              - name: gender
+                valueString: MALE
+              resourceType: Parameters
+          resourceType: Parameters
 
   SearchExpressionParameters:
     allOf:
@@ -1477,48 +1923,7 @@ definitions:
       parameter:
         type: array
         items:
-          title: Parameter
-          type: object
-          required:
-          - name
-          properties:
-            name:
-              type: string
-              enum:
-              - resourceUrl
-              - active
-              - address
-              - address-city
-              - address-country
-              - address-postalcode
-              - address-state
-              - address-use
-              - animal-breed
-              - animal-species
-              - birthdate
-              # careprovider - unsupported?
-              - deathdate
-              - deceased
-              - email
-              - family
-              - gender
-              - given
-              - identifier
-              - language
-              #- link - unsupported?
-              - name
-              #- orgazniation - unsupported?
-              - phone
-              #- phonetic - unsupported?
-              - telecom
-            valueBoolean:
-              type: boolean
-            valueString:
-              type: string
-            valueToken:
-              type: string
-            valueInteger:
-              type: integer
+          - $ref: '#/definitions/PatientSearchParameter'
 
   Parameters:
     type: object
@@ -1528,7 +1933,73 @@ definitions:
         enum:
         - Parameters
 
+  PatientSearchParameter:
+    title: PatientSearchParameter
+    type: object
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        enum:
+        - resourceUrl
+        - active
+        - address
+        - address-city
+        - address-country
+        - address-postalcode
+        - address-state
+        - address-use
+        - animal-breed
+        - animal-species
+        - birthdate
+        # careprovider - unsupported?
+        - deathdate
+        - deceased
+        - email
+        - family
+        - gender
+        - given
+        - identifier
+        - language
+        #- link - unsupported?
+        - name
+        #- orgazniation - unsupported?
+        - phone
+        #- phonetic - unsupported?
+        - telecom
+      valueBoolean:
+        type: boolean
+      valueString:
+        type: string
+      valueToken:
+        type: string
+      valueInteger:
+        type: integer
+
+  RecordSetParameter:
+    title: Parameter
+    type: object
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        enum:
+        - type
+        - resourceType
+        - searchExpression
+      valueString:
+        type: string
+        enum:
+        - master
+        - query
+        - Patient
+      resource:
+        $ref: '#/definitions/SearchExpressionParameters'
+
   RecordSetParameters:
+    title: Record Set Parameters
     allOf:
     - $ref: '#/definitions/Parameters'
     - type: object
@@ -1538,22 +2009,4 @@ definitions:
         minItems: 1
         uniqueItems: true
         items:
-          title: Parameter
-          type: object
-          required:
-          - name
-          properties:
-            name:
-              type: string
-              enum:
-              - type
-              - resourceType
-              - searchExpression
-            valueString:
-              type: string
-              enum:
-              - master
-              - query
-              - Patient
-            resource:
-              $ref: '#/definitions/SearchExpressionParameters'
+          $ref: '#/definitions/RecordSetParameter'

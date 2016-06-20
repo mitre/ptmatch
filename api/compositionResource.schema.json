@@ -1,0 +1,187 @@
+{
+  "type": "object",
+  "properties": {
+    "fullUrl": {
+      "type": "string"
+    },
+    "resource": {
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string"
+        },
+        "attester": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "mode": {
+                "type": "array",
+                "items": {
+                  "type": "string"
+                }
+              },
+              "time": {
+                "type": "string"
+              },
+              "party": {
+                "type": "object",
+                "properties": {
+                  "display": {
+                    "type": "string"
+                  },
+                  "external": {
+                    "type": "boolean"
+                  },
+                  "reference": {
+                    "type": "string"
+                  },
+                  "referenceid": {
+                    "type": "string"
+                  },
+                  "type": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "author": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "display": {
+                "type": "string"
+              },
+              "external": {
+                "type": "boolean"
+              },
+              "reference": {
+                "type": "string"
+              },
+              "referenceid": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "confidentiality": {
+          "type": "string"
+        },
+        "date": {
+          "type": "string",
+					"format": "date-time"
+        },
+        "meta": {
+          "type": "object",
+          "properties": {
+            "lastUpdated": {
+              "type": "string",
+							"format": "date-time"
+            }
+          }
+        },
+        "resourceType": {
+          "type": "string"
+        },
+        "section": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "code": {
+                "type": "object",
+                "properties": {
+                  "coding": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "code": {
+                          "type": "string"
+                        },
+                        "display": {
+                          "type": "string"
+                        },
+                        "system": {
+                          "type": "string"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "entry": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "external": {
+                      "type": "boolean"
+                    },
+                    "reference": {
+                      "type": "string"
+                    }
+                  }
+                }
+              },
+              "mode": {
+                "type": "string"
+              },
+              "title": {
+                "type": "string"
+              }
+            }
+          }
+        },
+        "status": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "object",
+          "properties": {
+            "display": {
+              "type": "string"
+            },
+            "external": {
+              "type": "boolean"
+            },
+            "reference": {
+              "type": "string"
+            }
+          }
+        },
+        "title": {
+          "type": "string"
+        },
+        "type": {
+          "type": "object",
+          "properties": {
+            "coding": {
+              "type": "array",
+              "items": {
+                "type": "object",
+                "properties": {
+                  "code": {
+                    "type": "string"
+                  },
+                  "system": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "text": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    }
+  }
+}
