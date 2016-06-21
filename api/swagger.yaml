@@ -42,12 +42,14 @@ info:
       - A FHIR Document is a FHIR Bundle with type, document.
       - The first entry in the bundle must contain a Composition resource.
       Subsequent entries must be referenced from within the Composition entry.
+      An example Composition Resource is in
+      <a href="compositionResource.schema.json" target="_blank">Composition Resource JSON Schema</a>
 
     The high level layout of an Answer Key is presented in the figure.
 
     ![Answer Key Organization](AnswerKeyLayout.png "Answer Key Organization")
 
-    <a href="compositionResource.schema.json" target="_blank">Composition Resource JSON Schema</a>
+
 
     ## Additional Information
     * [ptmatch GitHub site](https://github.com/mitre/ptmatch/ "ptmatch GitHub Site")
@@ -350,7 +352,6 @@ paths:
                         resource:
                           _id: 5746f0cba7fc203dc7e4642b
                           data:
-                            - external: false
                               reference: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
                           destination:
                             - endpoint: 'http://mitre.org/ptmatch'
@@ -512,7 +513,6 @@ paths:
                         resource:
                           _id: 5750238ea7fc204288bba7f8
                           data:
-                            - external: false
                               reference: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
                           destination:
                             - endpoint: 'http://mitre.org/ptmatch'
@@ -748,16 +748,6 @@ paths:
           description: Success
           schema:
             $ref: '#/definitions/RecordMatchSystemInterface'
-          example:
-            id: 573344ec65ddb4272a7daff6
-            meta:
-              createdOn: 2016-05-11T10:42:52.927-04:00
-              lastUpdatedOn: 2016-05-11T10:42:52.927-04:00
-            name: FRIL - Equal Weight - Accept 60
-            description: FRIL on localhost.  Nearly Equal weights on all fields; accept = 60
-            destinationEndpoint: http://mitre.org/ptmatchadapter-fril
-            serverEndpoint: http://localhost:3001
-            responseEndpoint: http://mitre.org/ptmatch
     put:
       operationId: updateRecordMatchSystemInterface
       summary: Update Record Match System Interface
@@ -879,16 +869,10 @@ paths:
                           time: '2016-05-28T18:12:21-04:00'
                           party:
                             display: Good Health Clinic
-                            external: false
                             reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
-                            referenceid: 2.16.840.1.113883.19.5
-                            type: Organization
                       author:
                         - display: Doctor Adam
-                          external: false
                           reference: Practitioner/example
-                          referenceid: example
-                          type: Practitioner
                       confidentiality: 'N'
                       date:
                         precision: timestamp
@@ -905,28 +889,17 @@ paths:
                                 display: Matching Record
                                 system: 'https://github.com/mitre/ptmatch'
                           entry:
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
-                            - external: false
-                              reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
+                            - reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
                           mode: final
                           title: Matching Records
                         - code:
@@ -935,13 +908,11 @@ paths:
                                 display: Record Set Description
                                 system: 'https://github.com/mitre/ptmatch'
                           entry:
-                            - external: false
                               reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
                           title: Record Set Description
                       status: final
                       subject:
                         display: Males in Grand Rapids Record Set
-                        external: true
                         reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
                       title: Answer Key
                       type:
@@ -1202,6 +1173,11 @@ definitions:
         $ref: '#/definitions/Meta'
       message:
         $ref: '#/definitions/RecordMatchRequestMessageBundle'
+        description: |
+          A record match request message bundle will contain at least two entries.
+          The first will contain a MessageHeader resource.
+          The second will contain a Paratmers resource. Any additional resources will
+          be internally referenced from an element in the MessageHeader (e.g., author).
       submittedOn:
         type: string
         format: date-time
@@ -1219,7 +1195,7 @@ definitions:
       meta:
         $ref: '#/definitions/Meta'
       message:
-        $ref: '#/definitions/MessageBundle'
+        $ref: '#/definitions/RecordMatchResponseMessageBundle'
       receivedOn:
         type: string
         format: date-time
@@ -1510,6 +1486,34 @@ definitions:
       an instant in time - known at least to the second
       and always includes a time zone.
 
+  FhirDateTime:
+    type: string
+    pattern: ^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[0-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?$
+    description: A date, date-time or partial date
+
+  AnswerKeyAttester:
+    title: Answer Key Attester
+    type: object
+    properties:
+      mode:
+        type: array
+        items:
+          $ref: '#/definitions/AttesterMode'
+      time:
+        $ref: '#/definitions/FhirDateTime'
+      party:
+        $ref: '#/definitions/FhirReference'
+        description: |
+          Party should be a reference to a Patient, Practitioner, or Organization
+
+  AttesterMode:
+    type: string
+    enum:
+      - personal
+      - professional
+      - legal
+      - official
+
   AnswerKeyResource:
     title: Answer Key Resource
     allOf:
@@ -1519,42 +1523,13 @@ definitions:
         attester:
           type: array
           items:
-            type: object
-            properties:
-              mode:
-                type: array
-                items:
-                  type: string
-              time:
-                type: string
-              party:
-                type: object
-                properties:
-                  display:
-                    type: string
-                  external:
-                    type: boolean
-                  reference:
-                    type: string
-                  referenceid:
-                    type: string
-                  type:
-                    type: string
+            $ref: '#/definitions/AnswerKeyAttester'
         author:
           type: array
+          description: |
+            reference to a Patient, Practitioner, Device, or RelatedPerson
           items:
-            type: object
-            properties:
-              display:
-                type: string
-              external:
-                type: boolean
-              reference:
-                type: string
-              referenceid:
-                type: string
-              type:
-                type: string
+            $ref: '#/definitions/FhirReference'
         confidentiality:
           type: string
         date:
@@ -1562,62 +1537,80 @@ definitions:
         section:
           type: array
           items:
-            type: object
-            properties:
-              code:
-                type: object
-                properties:
-                  coding:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        code:
-                          type: string
-                        display:
-                          type: string
-                        system:
-                          type: string
-              entry:
-                type: array
-                items:
-                  type: object
-                  properties:
-                    external:
-                      type: boolean
-                    reference:
-                      type: string
-              mode:
-                type: string
-              title:
-                type: string
+            $ref: '#/definitions/AnswerKeySection'
         status:
+          title: Composition Status
           type: string
+          enum:
+            - preliminary
+            - final
+            - amended
+            - entered-in-error
         subject:
-          type: object
-          properties:
-            display:
-              type: string
-            external:
-              type: boolean
-            reference:
-              type: string
+          $ref: '#/definitions/FhirReference'
         title:
           type: string
+          description: human-readable title of Composition
         type:
-          type: object
-          properties:
-            coding:
-              type: array
-              items:
-                type: object
-                properties:
-                  code:
-                    type: string
-                  system:
-                    type: string
-            text:
-              type: string
+          $ref: '#/definitions/FhirCodeableConcept'
+
+  AnswerKeySection:
+    type: object
+    properties:
+      code:
+        $ref: '#/definitions/FhirCodeableConcept'
+      entry:
+        type: array
+        items:
+          $ref: '#/definitions/FhirReference'
+      mode:
+        type: string
+        enum:
+          - working
+          - snapshot
+          - changes
+      title:
+        type: string
+        description: label for the section
+      text:
+        $ref: '#/definitions/FhirNarrative'
+      orderedBy:
+        $ref: '#/definitions/FhirCodeableConcept'
+      emptyReason:
+        $ref: '#/definitions/FhirCodeableConcept'
+        description: reason this section is empty
+
+  FhirCodeableConcept:
+    type: object
+    properties:
+      coding:
+        type: array
+        items:
+          $ref: '#/definitions/FhirCoding'
+      text:
+        type: string
+
+  FhirCoding:
+    type: object
+    properties:
+      display:
+        type: string
+      code:
+        type: string
+      system:
+        type: string
+      version:
+        type: string
+      userSelected:
+        type: boolean
+
+  FhirReference:
+    type: object
+    properties:
+      display:
+        type: string
+      reference:
+        type: string
 
   FhirLink:
     title: FhirLink
@@ -1725,16 +1718,10 @@ definitions:
                 time: '2016-05-28T18:12:21-04:00'
                 party:
                   display: Good Health Clinic
-                  external: false
                   reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
-                  referenceid: 2.16.840.1.113883.19.5
-                  type: Organization
             author:
               - display: Doctor Adam
-                external: false
                 reference: Practitioner/example
-                referenceid: example
-                type: Practitioner
             confidentiality: 'N'
             date: '2016-02-01T07:30:02-05:00'
             meta:
@@ -1747,12 +1734,9 @@ definitions:
                       display: Matching Record
                       system: 'https://github.com/mitre/ptmatch'
                 entry:
-                  - external: false
-                    reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
-                  - external: false
-                    reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
-                  - external: false
-                    reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                  - reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                  - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                  - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
                 mode: final
                 title: Matching Records
               - code:
@@ -1761,13 +1745,11 @@ definitions:
                       display: Record Set Description
                       system: 'https://github.com/mitre/ptmatch'
                 entry:
-                  - external: false
-                    reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                  - reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
                 title: Record Set Description
             status: final
             subject:
               display: Males in Grand Rapids Record Set
-              external: true
               reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
             title: Answer Key
             type:
@@ -1914,6 +1896,12 @@ definitions:
                 valueString: MALE
               resourceType: Parameters
           resourceType: Parameters
+
+  RecordMatchResponseMessageBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/MessageBundle'
+    - type: object
 
   SearchExpressionParameters:
     allOf:

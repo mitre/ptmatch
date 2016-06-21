@@ -18,20 +18,14 @@
             "time": "2016-05-28T18:12:21-04:00",
             "party": {
               "display": "Good Health Clinic",
-              "external": false,
               "reference": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be",
-              "referenceid": "2.16.840.1.113883.19.5",
-              "type": "Organization"
             }
           }
         ],
         "author": [
           {
             "display": "Doctor Adam",
-            "external": false,
             "reference": "Practitioner/example",
-            "referenceid": "example",
-            "type": "Practitioner"
           }
         ],
         "confidentiality": "N",
@@ -53,47 +47,36 @@
             },
             "entry": [
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56d5a89ca2910241fb142603"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99ea"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142626"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99e4"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d5"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99e0"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142627"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d7"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56dda203a29102104bbf99d2"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142617"
               },
               {
-                "external": false,
                 "reference": "http://localhost:3001/Patient/56d5a89da2910241fb142618"
               }
             ],
@@ -104,7 +87,6 @@
         "status": "final",
         "subject": {
           "display": "Males in Grand Rapids Record Set",
-          "external": false,
           "reference": "urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be"
         },
         "title": "Answer Key",
