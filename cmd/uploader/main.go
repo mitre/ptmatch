@@ -20,7 +20,7 @@ const tagURL = "http://mitre.org/ptmatch/recordSet"
 // It will go through a directory of patient resources, in JSON format, read
 // them in, apply the tag, and then upload them to the FHIR server.
 func main() {
-	fhirURL := flag.String("fhirURL", "", "URL for the FHIR server")
+	fhirURL := flag.String("fhirURL", "", "URL for the patient matching test harness server")
 	recordSetName := flag.String("name", "", "Name of the record set")
 	path := flag.String("path", "", "Path to the JSON files")
 
@@ -29,29 +29,35 @@ func main() {
 	argsToName := map[string]string{"fhirURL": *fhirURL, "name": *recordSetName, "path": *path}
 	for argName, argValue := range argsToName {
 		if argValue == "" {
-			panic(fmt.Sprintf("You must provide an argument for %s", argName))
+			fmt.Printf("You must provide an argument for %s\n", argName)
+			return
 		}
 	}
+
+	trimmedFhirURL := strings.TrimRight(*fhirURL, "/")
 
 	recordSet := &ptm_models.RecordSet{Name: *recordSetName}
 
 	recordSet.ResourceType = "Patient"
-	recordSet.Parameters = generateRecordSetParameters(*fhirURL, *recordSetName)
+	recordSet.Parameters = generateRecordSetParameters(trimmedFhirURL, *recordSetName)
 	rsj, _ := json.Marshal(recordSet)
 	body := bytes.NewReader(rsj)
-	recordSetURL := *fhirURL + "/RecordSet"
+
+	recordSetURL := trimmedFhirURL + "/RecordSet"
 	http.Post(recordSetURL, "application/json", body)
 
 	files, err := ioutil.ReadDir(*path)
 	if err != nil {
-		panic("Couldn't read the directory" + err.Error())
+		fmt.Printf("Couldn't read the directory: %s\n", err.Error())
+		return
 	}
 	for _, file := range files {
 		if strings.HasSuffix(file.Name(), ".json") {
 			jsonBlob, err := ioutil.ReadFile(fmt.Sprintf("%s/%s", *path, file.Name()))
 			patient := &fhir_models.Patient{}
 			if err != nil {
-				panic("Couldn't read the JSON file" + err.Error())
+				fmt.Printf("Couldn't read the JSON file: %s\n", err.Error())
+				return
 			}
 			json.Unmarshal(jsonBlob, patient)
 			tagCoding := fhir_models.Coding{System: tagURL, Code: tagValue(*recordSetName)}
@@ -59,8 +65,16 @@ func main() {
 			patient.Meta = meta
 			pj, _ := json.Marshal(patient)
 			pb := bytes.NewReader(pj)
-			patientURL := *fhirURL + "/Patient"
-			http.Post(patientURL, "application/json", pb)
+			patientURL := trimmedFhirURL + "/Patient"
+			resp, err := http.Post(patientURL, "application/json", pb)
+			if err != nil {
+				fmt.Printf("Couldn't upload patient: %s\n", err.Error())
+				return
+			}
+			if resp.StatusCode != http.StatusCreated {
+				fmt.Sprintf("Unexpected status code when creating a patient: %d\n", resp.StatusCode)
+				return
+			}
 		}
 	}
 }
