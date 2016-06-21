@@ -1,0 +1,2105 @@
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+# Swagger Specification for Patient Match Test Harness
+#
+# Copyright (c) 2016.  The MITRE Corporation. All rights reserved.
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+swagger: '2.0'
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                  API Information
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+info:
+  version: "0.1.0"
+  title: Patient Match Test Harness REST API
+  description: |
+    This REST API provides access to resources managed by an instance of the Patient Match Test Harness.  These services can be used to construct an alternative user interface to the test harness server.
+
+    ## Principal Resources
+    The API provides direct access to the following resources.
+    - Record Set
+      - represents a population of Patient Records that can be described using a FHIR Search Expression
+      - Answer Key
+        - Represented as a FHIR Document, an Answer Key describes the record
+        matches that are known to exist in the Record Set.
+    - Record Match Context
+      - groups a collection of related record match runs
+    - Record Match Run
+      - encapsuplates everything associated with one run performed by a record matching system.  This includes the input record set, the request message sent to the record matching system, and the matching results received in record match response messages.
+    - Record Match Run Metrics
+      - select metrics associated with the record match results.  These  include the number of matches found, F1 measure, Precision and Recall.  The specific set of reported metrics depends on specific test use cases.
+    - Record Match System Interface
+      - describes network endpoint to a record matching system
+
+    The relationships between these resources and other structures within them are depicted in the following diagram.
+    ![Resource Relationships](img/ResourceRelationships.png "Resource Relationships")
+
+    ## Answer Key
+    An Answer Key may be associated with a Record Set.  An answer key contains
+    a collection of link entries that describe the record matches known to
+    exist in the record set.
+
+    An Answer Key is represented as a FHIR Document:
+      - A FHIR Document is a FHIR Bundle with type, document.
+      - The first entry in the bundle must contain a Composition resource.
+      Subsequent entries must be referenced from within the Composition entry.
+      An example Composition Resource is in
+      <a href="compositionResource.schema.json" target="_blank">Composition Resource JSON Schema</a>
+
+    The high level layout of an Answer Key is presented in the figure.
+
+    ![Answer Key Organization](img/AnswerKeyLayout.png "Answer Key Organization")
+
+    ### Answer Key Codes
+    The first entry in an Answer Key is a Composition Resource.  Two codes specific
+    to an Answer Key are used in the Composition Resource.
+
+    * Composition.type - identifies the type of composition
+      * coding.display: Answer Key
+      * coding.system:  https://github.com/mitre/ptmatch
+      * coding.code:    10001-1
+    * Composition.section.code - specifies the purpose of the section. In an
+    Answer Key, the section with this code references the entries that link the
+    matching records.
+      * coding.display:  Matching Record
+      * coding.system:   https://github.com/mitre/ptmatch
+      * coding.code:     10001-2
+
+    ### Annotated Answer Key Example
+    #### Bundle Introduction
+    An Answer Key is a FHIR Document, which is a Bundle with type, document.
+    ![Answer Key Introduction](img/answerKeyIntroSection.png "Answer Key Introduction")
+    #### The First Entry - Composition Resource
+    The first entry of a FHIR Document is expected to be a Composition Resource
+    (https://www.hl7.org/fhir/documents.html#content). The Composition Resource
+    describes the identity, purpose and context for the document. Any resource
+    referenced in the Composition resource must be included in a subsequent
+    entry in this bundle.
+    ![Answer Key Composition](img/answerKeyCompositionResource.png "Answer Key Composition")
+    #### Subject
+    The entry contains the information used to construct the FHIR search expression
+    that represents the population of records to which this Answer Key applies.
+    ![Answer Key Search Expression](img/answerKeySearchExpression.png "Answer Key Search Expression")
+    #### Other References - Author and Attester
+    A Composition Resource may contain several different types of references,
+    including the document author, attester, or custodian.
+    ![Answer Key Author](img/answerKeyAuthorAttester.png "Answer Key Search Author and Attester")
+    #### Linked Records
+    These entries relate two records considered to refer to the same Patient.
+    The expected values for search score are 1 to explicitly refer to a match and
+    0 to explicitly declare a non-match.  The meaning other values is currently
+    undefined.
+    ![Answer Key Linked Records](img/answerKeyLinkedRecords.png "Answer Key Linked Records")
+
+    ## Additional Information
+    * [ptmatch GitHub site](https://github.com/mitre/ptmatch/ "ptmatch GitHub Site")
+    * <a href="https://github.com/mitre/ptmatch/" target="_blank">ptmatch GitHub site</a>
+    * <a href="https://github.com/mitre/ptmatch-front-end/" target="_blank">ptmatch-frontend GitHub site</a>
+    - <a href="http://mitre.github.io/test-harness-interface/" target="_blank">pRecord Matching System Interface</a>
+    - Notes Related to FHIR
+      - <a href="https://www.hl7.org/fhir/bundle.html" target="_bundle">FHIR DSTU2 Resource Bundle</a>
+      - <a href="https://www.hl7.org/fhir/documents.html" target="_documents">FHIR DSTU2 FHIR Documents</a>
+      - <a href="https://www.hl7.org/fhir/composition.html" target="_composition">FHIR DSTU2 Resource Composition</a>
+      - Though not presented in the model schemas, the property fhir_comments,
+      is supported on those structures that represent FHIR Bundles. These include
+      AnswerKey, RecordMatchRequest, and RecordMatchResponse.
+      See <a href="https://www.hl7.org/fhir/json.html#xml" for information on
+      fhir_comments.
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#   Host, service Base Path, Schemes and Content Types
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#host: api.instagram.com
+schemes:
+  - http
+  - https
+produces:
+  - application/json
+consumes:
+  - application/json
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#           Paths
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+paths:
+  /AnswerKey:
+    post:
+      operationId: setAnswerKey
+      summary: Set Answer Key
+      tags:
+        - RecordSet
+      consumes:
+        - application/x-www-form-urlencoded
+      parameters:
+        - name: recordSetId
+          in: formData
+          description: Identifier of record set with which to associate the answer key
+          required: true
+          type: string
+        - name: answerKey
+          in: formData
+          description: |
+            JSON-formatted FHIR Bundle of type  Document that represents the answer key.
+            The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
+          required: true
+          type: file
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+        500:
+          description: Internal Server Error
+
+  /RecordMatchContext:
+    get:
+      operationId: getRecordMatchContexts
+      summary: Get Record Match Contexts
+      tags:
+        - RecordMatchContext
+      description: |
+        Returns an array of Record Match Context objects.
+      responses:
+        200:
+          description: Success
+          schema:
+            title: RecordMatchContexts
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: addRecordMatchContext
+      summary: Add a Record Match Context
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: recordMatchContext
+          in: body
+          description: Record Match Context to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchContextBase'
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchContext/{id}:
+    get:
+      operationId: getRecordMatchContextById
+      summary: Get one Record Match Context by Id
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    put:
+      operationId: updateRecordMatchContext
+      summary: Update Record Match Context
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+        - name: recordMatchContext
+          in: body
+          description: Record Match Context to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchContextBase'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        201:
+          description: Resource Created
+          schema:
+            $ref: '#/definitions/RecordMatchContext'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchContext
+      summary: Delete Record Match Context
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
+      tags:
+        - RecordMatchContext
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRun:
+    get:
+      operationId: getRecordMatchRuns
+      summary: Get Record Match Runs
+      tags:
+        - RecordMatchRun
+      parameters:
+        -
+          name: recordMatchContextId
+          in: query
+          description: |
+            Identifier of record match context to match.
+            Filters results to those runs associated with a specific context.
+          required: false
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            title: RecordMatchRuns
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchRun'
+            example:
+            - id: 5746f0aea291023b0db67632
+              meta:
+                createdOn: '2016-05-26T08:48:46.713-04:00'
+                lastUpdatedOn: '0001-01-01T00:00:00Z'
+              recordMatchContextId: 5746e836a291023b0db67629
+              request:
+                id: 5746f0aea291023b0db67630
+                meta:
+                  createdOn: '2016-05-26T08:48:46.709-04:00'
+                  lastUpdatedOn: '0001-01-01T00:00:00Z'
+                message:
+                  resourceType: Bundle
+                  id: 5746f0aea291023b0db67631
+                  type: message
+                  entry:
+                    - fullUrl: 'urn:uuid:c0bd82da-ae27-48bd-bf92-841db6d55e92'
+                      resource:
+                        _id: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                        data:
+                          - reference: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                        destination:
+                          - endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                        event:
+                          code: record-match
+                          system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                        resourceType: MessageHeader
+                        source:
+                          endpoint: 'http://mitre.org/ptmatch'
+                        timestamp: '2016-05-26T08:48:46.703-04:00'
+                    - fullUrl: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                      resource:
+                        _id: 8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1
+                        parameter:
+                          - name: type
+                            valueString: master
+                          - name: resourceType
+                            valueString: Patient
+                          - name: searchExpression
+                            resource:
+                              parameter:
+                                - name: resourceUrl
+                                  valueString: 'http://localhost:3001/Patient'
+                                - name: gender
+                                  valueString: MALE
+                                - name: address-city
+                                  valueString: Grand Rapids
+                                - name: address-state
+                                  valueString: MI
+                              resourceType: Parameters
+                        resourceType: Parameters
+                submittedOn: '0001-01-01T00:00:00Z'
+              responses:
+                - id: 5746f0cba7fc203dc7e46428
+                  meta:
+                    createdOn: '2016-05-26T08:49:15.679-04:00'
+                    lastUpdatedOn: '2016-05-26T08:49:15.679-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5746f0cba7fc203dc7e46428
+                    meta:
+                      lastUpdated: '2016-05-26T08:49:15-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 687fd9dd-2d06-4936-a0af-71c8ede80268
+                        resource:
+                          _id: 5746f0cba7fc203dc7e46429
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: ptmatchAdapter-fril
+                          timestamp: '2016-05-26T08:49:15.581-04:00'
+                  receivedOn: '2016-05-26T08:49:15.679-04:00'
+                - id: 5746f0cba7fc203dc7e4642a
+                  meta:
+                    createdOn: '2016-05-26T08:49:15.774-04:00'
+                    lastUpdatedOn: '2016-05-26T08:49:15.774-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5746f0cba7fc203dc7e4642a
+                    meta:
+                      lastUpdated: '2016-05-26T08:49:15-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 'urn:uuid:8f9a03c7-ccd7-4f19-b3c4-fb75c9f8559d'
+                        resource:
+                          _id: 5746f0cba7fc203dc7e4642b
+                          data:
+                              reference: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: fatal-error
+                            identifier: c0bd82da-ae27-48bd-bf92-841db6d55e92
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                          timestamp: '2016-05-26T08:49:15.66-04:00'
+                      - fullUrl: 'urn:uuid:00428457-13a6-45ea-8a12-43ebb7ad945b'
+                        resource:
+                          _id: 5746f0cba7fc203dc7e4642c
+                          issue:
+                            - code: informational
+                              diagnostics: 'Error response from server.  code: 500, HTTP 500 Internal Server Error: '
+                              severity: information
+                          resourceType: OperationOutcome
+                      - fullUrl: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
+                        resource:
+                          _id: 8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1
+                          parameter:
+                            - name: type
+                              valueString: master
+                            - name: resourceType
+                              valueString: Patient
+                            - name: searchExpression
+                              resource:
+                                parameter:
+                                  - name: resourceUrl
+                                    valueString: 'http://localhost:3001/Patient'
+                                  - name: gender
+                                    valueString: MALE
+                                  - name: address-city
+                                    valueString: Grand Rapids
+                                  - name: address-state
+                                    valueString: MI
+                                resourceType: Parameters
+                          resourceType: Parameters
+                  receivedOn: '2016-05-26T08:49:15.774-04:00'
+              metrics: {}
+              status:
+                - message: 'Request Sent [201 Created]'
+                  createdOn: '2016-05-26T08:48:46.712-04:00'
+                - message: 'Response Received [5746f0cba7fc203dc7e46428]'
+                  createdOn: '2016-05-26T08:49:15.679-04:00'
+                - message: 'Metrics Updated [5746f0cba7fc203dc7e46428]'
+                  createdOn: '2016-05-26T08:49:15.699-04:00'
+                - message: 'Response Received [5746f0cba7fc203dc7e4642a]'
+                  createdOn: '2016-05-26T08:49:15.774-04:00'
+                - message: 'Metrics Updated [5746f0cba7fc203dc7e4642a]'
+                  createdOn: '2016-05-26T08:49:15.788-04:00'
+              matchingMode: deduplication
+              recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+              masterRecordSetId: 572b66b8a291021cbcb5e0fb
+            - id: 57502376a29102405f406255
+              meta:
+                createdOn: '2016-06-02T08:15:50.726-04:00'
+                lastUpdatedOn: '0001-01-01T00:00:00Z'
+              recordMatchContextId: 5746e836a291023b0db67629
+              request:
+                id: 57502376a29102405f406253
+                meta:
+                  createdOn: '2016-06-02T08:15:50.636-04:00'
+                  lastUpdatedOn: '0001-01-01T00:00:00Z'
+                message:
+                  resourceType: Bundle
+                  id: 57502376a29102405f406254
+                  type: message
+                  entry:
+                    - fullUrl: 'urn:uuid:64af6aa4-0321-4516-843b-6d4514a56d3d'
+                      resource:
+                        _id: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                        data:
+                          - reference: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                        destination:
+                          - endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                        event:
+                          code: record-match
+                          system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                        resourceType: MessageHeader
+                        source:
+                          endpoint: 'http://mitre.org/ptmatch'
+                        timestamp: '2016-06-02T08:15:50.598-04:00'
+                    - fullUrl: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                      resource:
+                        _id: ff483dfa-b959-4eff-8751-6c09634d27d4
+                        parameter:
+                          - name: type
+                            valueString: master
+                          - name: resourceType
+                            valueString: Patient
+                          - name: searchExpression
+                            resource:
+                              parameter:
+                                - name: resourceUrl
+                                  valueString: 'http://localhost:3001/Patient'
+                                - name: gender
+                                  valueString: MALE
+                                - name: address-city
+                                  valueString: Grand Rapids
+                                - name: address-state
+                                  valueString: MI
+                              resourceType: Parameters
+                        resourceType: Parameters
+                submittedOn: '0001-01-01T00:00:00Z'
+              responses:
+                - id: 5750238da7fc204288bba7f5
+                  meta:
+                    createdOn: '2016-06-02T08:16:13.432-04:00'
+                    lastUpdatedOn: '2016-06-02T08:16:13.432-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5750238da7fc204288bba7f5
+                    meta:
+                      lastUpdated: '2016-06-02T08:16:13-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 47e20619-7c2d-49ff-9142-537977288b40
+                        resource:
+                          _id: 5750238da7fc204288bba7f6
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: ptmatchAdapter-fril
+                          timestamp: '2016-06-02T08:16:13.296-04:00'
+                  receivedOn: '2016-06-02T08:16:13.432-04:00'
+                - id: 5750238ea7fc204288bba7f7
+                  meta:
+                    createdOn: '2016-06-02T08:16:14.381-04:00'
+                    lastUpdatedOn: '2016-06-02T08:16:14.381-04:00'
+                  message:
+                    resourceType: Bundle
+                    id: 5750238ea7fc204288bba7f7
+                    meta:
+                      lastUpdated: '2016-06-02T08:16:14-04:00'
+                    type: message
+                    entry:
+                      - fullUrl: 'urn:uuid:e43cbbf0-11ed-4d65-b91a-f153d4067096'
+                        resource:
+                          _id: 5750238ea7fc204288bba7f8
+                          data:
+                              reference: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                          destination:
+                            - endpoint: 'http://mitre.org/ptmatch'
+                          event:
+                            code: record-match
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
+                          resourceType: MessageHeader
+                          response:
+                            code: ok
+                            identifier: 64af6aa4-0321-4516-843b-6d4514a56d3d
+                          source:
+                            endpoint: 'http://mitre.org/ptmatchadapter-fril'
+                            name: FRIL - Equal Weight - Accept 60
+                          timestamp: '2016-06-02T08:16:14.343-04:00'
+                      - fullUrl: 'urn:uuid:f3d647d9-536b-4ca8-aeaf-2099b077f36f'
+                        resource:
+                          _id: 5750238ea7fc204288bba7f9
+                          issue:
+                            - code: informational
+                              details:
+                                text: Deduplication Complete
+                              severity: information
+                          resourceType: OperationOutcome
+                      - fullUrl: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
+                        resource:
+                          _id: ff483dfa-b959-4eff-8751-6c09634d27d4
+                          parameter:
+                            - name: type
+                              valueString: master
+                            - name: resourceType
+                              valueString: Patient
+                            - name: searchExpression
+                              resource:
+                                parameter:
+                                  - name: resourceUrl
+                                    valueString: 'http://localhost:3001/Patient'
+                                  - name: gender
+                                    valueString: MALE
+                                  - name: address-city
+                                    valueString: Grand Rapids
+                                  - name: address-state
+                                    valueString: MI
+                                resourceType: Parameters
+                          resourceType: Parameters
+                      - link:
+                          - relation: type
+                            url: 'http://hl7.org/fhir/Patient'
+                          - relation: related
+                            url: 'http://localhost:3001/Patient/5733977ca291026adcf58526'
+                        fullUrl: 'http://localhost:3001/Patient/56cc7f83a291024d6fd5e87f'
+                        search:
+                          extension:
+                            - url: 'http://hl7.org/fhir/StructureDefinition/patient-mpi-match'
+                              valueCode: probable
+                          score: 0.71
+                  receivedOn: '2016-06-02T08:16:14.381-04:00'
+              metrics:
+                f1: 1
+                matchCount: 1
+                falsePositiveCount: 1
+              status:
+                - message: 'Request Sent [201 Created]'
+                  createdOn: '2016-06-02T08:15:50.725-04:00'
+                - message: 'Response Received [5750238da7fc204288bba7f5]'
+                  createdOn: '2016-06-02T08:16:13.432-04:00'
+                - message: 'Metrics Updated [5750238da7fc204288bba7f5]'
+                  createdOn: '2016-06-02T08:16:13.487-04:00'
+                - message: 'Response Received [5750238ea7fc204288bba7f7]'
+                  createdOn: '2016-06-02T08:16:14.381-04:00'
+                - message: 'Metrics Updated [5750238ea7fc204288bba7f7]'
+                  createdOn: '2016-06-02T08:16:14.397-04:00'
+              matchingMode: deduplication
+              recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+              masterRecordSetId: 572b66b8a291021cbcb5e0fb
+
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: startRecordMatchRun
+      summary: Start Record Match Run
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: body
+          in: body
+          description: Parameters for starting a Record Match Run
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchRunBase'
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRun/{id}:
+    get:
+      operationId: getRecordMatchRunById
+      summary: Get one Record Match Run by Id
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: identifier of the resource to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchRun'
+    put:
+      operationId: updateRecordMatchRun
+      summary: Update Record Match Run
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: identifier of resource to update
+          required: true
+          type: string
+        - name: recordMatchRun
+          in: body
+          description: Record Match Run to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchRunBase'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchRun'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchRun
+      summary: Delete Record Match Run
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
+      tags:
+        - RecordMatchRun
+      parameters:
+        - name: id
+          in: path
+          description: identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordMatchRunMetrics:
+    get:
+      operationId: getRecordMatchRunMetrics
+      summary: Record Match Run Metrics
+      tags:
+        - RecordMatchRun
+      responses:
+        200:
+          description: Success
+          schema:
+            title: Array of Record Match Run Metrics
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchRunMetrics'
+
+  /RecordMatchSystemInterface:
+    get:
+      operationId: getRecordMatchSystemInterfaces
+      summary: Record Match System Interfaces
+      tags:
+        - RecordMatchSystemInterface
+      responses:
+        200:
+          description: Success
+          schema:
+            title: RecordMatchSystemInterfaces
+            type: array
+            items:
+              $ref: '#/definitions/RecordMatchSystemInterface'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: addRecordMatchSystemInterface
+      summary: Add Record Match System Interface
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: recordSystemInterface
+          in: body
+          description: Record System Interface to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterfaceBase'
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordMatchSystemInterface/{id}:
+    get:
+      operationId: getRecordMatchSystemInterfaceById
+      summary: Get one Record Match System Interface by Id
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterface'
+    put:
+      operationId: updateRecordMatchSystemInterface
+      summary: Update Record Match System Interface
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordMatchSystemInterfaceBase'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordMatchSystemInterface
+      summary: Delete Record Match System Interface
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
+      tags:
+        - RecordMatchSystemInterface
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+  /RecordSet:
+    get:
+      operationId: getRecordSets
+      summary: Get Record Sets
+      tags:
+        - RecordSet
+      responses:
+        200:
+          description: Success
+          schema:
+            title: RecordSets
+            type: array
+            items:
+              $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        404:
+          description: Not Found
+    post:
+      operationId: addRecordSet
+      summary: Add Record Set
+      tags:
+        - RecordSet
+      parameters:
+        - name: recordSet
+          in: body
+          description: Record Set to add
+          required: true
+          schema:
+            $ref: '#/definitions/RecordSetBase'
+      responses:
+        201:
+          description: Resource Created
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+
+  /RecordSet/{id}:
+    get:
+      operationId: getRecordSetById
+      summary: Get one Record Set by Id
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to retrieve
+          required: true
+          type: string
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordSet'
+          examples:
+            application/json:
+              id: 572b66b8a291021cbcb5e0fb
+              meta:
+                createdOn: '2016-05-05T11:28:56.761-04:00'
+                lastUpdatedOn: '2016-05-05T11:28:56.761-04:00'
+              name: 'Males in Grand Rapids,MI'
+              description: 'Male Patients with current address in Grand Rapids, MI'
+              resourceType: Patient
+              answerKey:
+                resourceType: Bundle
+                id: 541a72a8-df75-4484-ac89-ac4923f03b81
+                meta:
+                  lastUpdated: '2016-05-28T18:12:21-04:00'
+                type: document
+                entry:
+                  - fullUrl: 'http://localhost:3001/Composition/180f219f-97a8-486d-99d9-ed631fe4fc57'
+                    resource:
+                      id: 180f219f-97a8-486d-99d9-ed631fe4fc57
+                      attester:
+                        - mode:
+                            - professional
+                          time: '2016-05-28T18:12:21-04:00'
+                          party:
+                            display: Good Health Clinic
+                            reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                      author:
+                        - display: Doctor Adam
+                          reference: Practitioner/example
+                      confidentiality: 'N'
+                      date: '2016-02-01T07:30:02-05:00'
+                      meta:
+                        lastUpdated: '2016-05-28T18:12:21-04:00'
+                      resourceType: Composition
+                      section:
+                        - code:
+                            coding:
+                              - code: 10001-2
+                                display: Matching Record
+                                system: 'https://github.com/mitre/ptmatch'
+                          entry:
+                            - reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
+                            - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
+                            - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
+                          mode: final
+                          title: Matching Records
+                        - code:
+                            coding:
+                              - code: 10001-3
+                                display: Record Set Description
+                                system: 'https://github.com/mitre/ptmatch'
+                          entry:
+                              reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                          title: Record Set Description
+                      status: final
+                      subject:
+                        display: Males in Grand Rapids Record Set
+                        reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
+                      title: Answer Key
+                      type:
+                        coding:
+                          - code: 10001-1
+                            system: 'https://github.com/mitre/ptmatch'
+                        text: Collection of Matching Records
+                  - fullUrl: 'http://localhost:3001/Practitioner/example'
+                    resource:
+                      id: example
+                      identifier:
+                        - system: 'http://www.acme.org/practitioners'
+                          value: '23'
+                      meta:
+                        lastUpdated: '2016-05-05T12:13:03-04:00'
+                      name:
+                        family:
+                          - Careful
+                        given:
+                          - Adam
+                        prefix:
+                          - Dr
+                      resourceType: Practitioner
+                  - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                    resource:
+                      resourceType: Organization
+                      id: 2.16.840.1.113883.19.5
+                      text:
+                        status: generated
+                        div: |-
+                          <div>
+
+                           <p>Good Health Clinic</p>
+
+                          </div>
+                      identifier:
+                        - system: 'urn:ietf:rfc:3986'
+                          value: 2.16.840.1.113883.19.5
+                      name: Good Health Clinic
+                  - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                    resource:
+                      id: b89450ff-31ae-46f7-a305-580a323b16be
+                      parameter:
+                        - name: type
+                          valueString: master
+                        - name: resourceType
+                          valueString: Patient
+                        - name: searchExpression
+                          resource:
+                            parameter:
+                              - name: resourceUrl
+                                valueString: 'http://localhost:3001/Patient'
+                              - name: gender
+                                valueString: MALE
+                              - name: address-city
+                                valueString: Grand Rapids
+                              - name: address-state
+                                valueString: MI
+                            resourceType: Parameters
+                      resourceType: Parameters
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf9994'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a0d'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b7'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a07'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99e4'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99f8'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d5'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a03'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99e0'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b8'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142627'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99fa'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d7'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda249a29102104bbf99f5'
+                    fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99d2'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf99a8'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142617'
+                    search:
+                      score: 1
+                  - link:
+                      - relation: type
+                        url: 'http://hl7.org/fhir/Patient'
+                      - relation: related
+                        url: 'http://localhost:3001/Patient/56dda163a29102104bbf99a9'
+                    fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142618'
+                    search:
+                      score: 1
+
+    put:
+      operationId: updateRecordSet
+      summary: Update Record Set
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to update
+          required: true
+          type: string
+        - name: recordSet
+          in: body
+          description: Record Set to update
+          required: true
+          schema:
+            $ref: '#/definitions/RecordSetBase'
+      responses:
+        200:
+          description: Success
+          schema:
+            $ref: '#/definitions/RecordSet'
+        400:
+          description: Bad Request
+        500:
+          description: Internal Server Error
+    delete:
+      operationId: deleteRecordSet
+      summary: Delete Record Set
+      description: |
+        This operation returns HTTP Status 204 if the request is
+        processed without error. It does not return content in the
+        response body.
+      tags:
+        - RecordSet
+      parameters:
+        - name: id
+          in: path
+          description: Identifier of resource to delete
+          required: true
+          type: string
+      responses:
+        204:
+          description: No Content
+        500:
+          description: Internal Server Error
+
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+#                       Definitions
+# # # # # # # # # # # # # # # # # # # # # # # # # # # # #
+definitions:
+  RecordMatchContextBase:
+    type: object
+    description: |
+      A Record Match Context provides a way to group Record
+      Match Runs that are related in some way.
+    required:
+    - name
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      type:
+        type: string
+        enum:
+        - benchmark
+        - challenge
+    example:
+      name: Local FRIL; Grand Rapids Males; Team A
+      type: challenge
+      description: Context for Team A; Objective 1
+
+  RecordMatchContext:
+    allOf:
+    - $ref: '#/definitions/RecordMatchContextBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+    example:
+      id: 5746e836a291023b0db67629
+      type: challenge
+      name: Local FRIL; Grand Rapids Males; Team A
+      description: Context for Team A; Objective 1
+      meta:
+        createdOn: "2016-05-26T08:12:38.615-04:00"
+        lastUpdatedOn: "2016-05-26T08:12:38.615-04:00"
+
+  RecordMatchRequest:
+    type: object
+    description: |
+      A Record Match Context encapsulates the FHIR message
+      generated to request a record match operation.
+    required:
+    - id
+    - message
+    - submittedOn
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      message:
+        $ref: '#/definitions/RecordMatchRequestMessageBundle'
+        description: |
+          A record match request message bundle will contain at least two entries.
+          The first will contain a MessageHeader resource.
+          The second will contain a Paratmers resource. Any additional resources will
+          be internally referenced from an element in the MessageHeader (e.g., author).
+      submittedOn:
+        type: string
+        format: date-time
+        description: date and time at which the message was sent to the record match system (via a FHIR server acting as a message broker.
+
+  RecordMatchResponse:
+    type: object
+    required:
+    - id
+    - message
+    - receivedOn
+    properties:
+      id:
+        type: string
+      meta:
+        $ref: '#/definitions/Meta'
+      message:
+        $ref: '#/definitions/RecordMatchResponseMessageBundle'
+      receivedOn:
+        type: string
+        format: date-time
+        description: date and time at which the message was received from the record match system (via a FHIR server acting as a message broker.
+
+  RecordMatchRunBase:
+    type: object
+    description: |
+      A Record Match Run encapsulates all data associated
+      with a record match run, including the context, the
+      generated request message, response messages, metrics,
+      and status.
+    required:
+    - matchingMode
+    - masterRecordSetId
+    - recordResourceType
+    properties:
+      matchingMode:
+        type: string
+        enum:
+          - query
+          - deduplication
+      note:
+        type: string
+        description: human-friendly comment about the run
+      recordMatchContextId:
+        type: string
+        minLength: 1
+      recordMatchSystemInterfaceId:
+        type: string
+        minLength: 1
+      masterRecordSetId:
+        type: string
+        minLength: 1
+      queryRecordSetId:
+        type: string
+        minLength: 1
+        description: |
+          Provided only in query matchingMode;
+          describes the records being sought in the set of master records
+      recordResourceType:
+        type: string
+        enum:
+        - Patient
+    example:
+      recordMatchContextId: 5746e836a291023b0db67629
+      recordMatchSystemInterfaceId: 572b66a7a291021cbcb5e0fa
+      matchingMode: deduplication
+      masterRecordSetId: 572b66b8a291021cbcb5e0fb
+      recordResourceType: Patient
+
+  RecordMatchRun:
+    allOf:
+    - $ref: '#/definitions/RecordMatchRunBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+        request:
+          $ref: '#/definitions/RecordMatchRequest'
+        responses:
+          type: array
+          items:
+            $ref: '#/definitions/RecordMatchResponse'
+        metrics:
+          $ref: '#/definitions/RecordMatchRunMetrics'
+        status:
+          type: array
+          items:
+            $ref: '#/definitions/RecordMatchRunStatusComponent'
+
+  RecordMatchRunMetrics:
+    type: object
+    properties:
+      f1:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+        description: F1 Measure
+      precision:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+        description:  fraction of retrieved instances that are relevant
+      recall:
+        type: number
+        format: float
+        minimum: 0
+        maximum: 1
+        description: fraction of relevant instances that are retrieved
+      MAP:
+        type: number
+        format: float
+      matchCount:
+        type: integer
+        minimum: 0
+        description: number of postives reported by the record  matching system
+      truePositiveCount:
+        type: integer
+        minimum: 0
+        description: number of true positives
+      falsePositiveCount:
+        type: integer
+        minimum: 0
+
+  RecordMatchSystemInterfaceBase:
+    type: object
+    required:
+    - name
+    - destinationEndpoint
+    - responseEndpoint
+    - serverEndpoint
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      destinationEndpoint:
+        type: string
+      responseEndpoint:
+        type: string
+      serverEndpoint:
+        type: string
+    example:
+      name: FRIL - Equal Weight - Accept 60
+      description: FRIL on localhost.  Nearly Equal weights on all fields; accept = 60
+      destinationEndpoint: http://mitre.org/ptmatchadapter-fril
+      serverEndpoint: http://localhost:3001
+      responseEndpoint: http://mitre.org/ptmatch
+
+  RecordMatchSystemInterface:
+    allOf:
+    - $ref: '#/definitions/RecordMatchSystemInterfaceBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+    example:
+      id: 57597375fb0482af6543f350
+      meta:
+        createdOn: 2016-05-11T10:42:52.927-04:00
+        lastUpdatedOn: 2016-05-11T10:42:52.927-04:00
+      name: OpenEMPI
+      description: OpenEMPI w/ localhost message broker
+      destinationEndpoint: http://mitre.org/ptmatchadapter-openempi
+      serverEndpoint: http://localhost:3001
+      responseEndpoint: http://mitre.org/ptmatch
+
+  RecordMatchRunStatusComponent:
+    type: object
+    required:
+    - message
+    - createdOn
+    properties:
+      message:
+        type: string
+      createdOn:
+        type: string
+        format: date-time
+        description: date and time at which the status message was created
+
+  RecordSetBase:
+    type: object
+    required:
+    - name
+    - resourceType
+    - parameters
+    properties:
+      name:
+        type: string
+      description:
+        type: string
+      resourceType:
+        type: string
+        enum:
+        - Patient
+      answerKey:
+        $ref: '#/definitions/AnswerKeyBundle'
+      parameters:
+        $ref: '#/definitions/RecordSetParameters'
+
+  RecordSet:
+    title: Record Set
+    allOf:
+    - $ref: '#/definitions/RecordSetBase'
+    - type: object
+      required:
+      - id
+      properties:
+        id:
+          type: string
+        meta:
+          $ref: '#/definitions/Meta'
+
+  Meta:
+    type: object
+    properties:
+      createdOn:
+        type: string
+        format: date-time
+        description: date and time at which the resource was created.
+      lastUpdatedOn:
+        type: string
+        format: date-time
+        description: date and time at which the resource was last updated.
+
+  FhirMeta:
+    type: object
+    properties:
+      versionId:
+        type: string
+        pattern: ^[A-Za-z0-9\-\.]{1,64}^
+        minLength: 1
+        maxLength: 64
+      lastUpdated:
+        $ref: '#/definitions/FhirTimeInstant'
+
+  FhirBundleBase:
+    type: object
+    required:
+      - id
+      - resourceType
+    externalDocs:
+      description: FHIR Resource Bundle - Content
+      url: https://www.hl7.org/fhir/bundle.html
+    properties:
+      id:
+        type: string
+        format: uuid
+      resourceType:
+        type: string
+        enum:
+        - Bundle
+      meta:
+        $ref: '#/definitions/FhirMeta'
+      text:
+        $ref: '#/definitions/FhirNarrative'
+
+  FhirDomainResource:
+    title: FhirDomainResource
+    type: object
+    required:
+      - resourceType
+    properties:
+      resourceType:
+        type: string
+        minLength: 1
+      id:
+        type: string
+        minLength: 1
+      text:
+        $ref: '#/definitions/FhirNarrative'
+
+  FhirTimeInstant:
+    type: string
+    pattern: ^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[0-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?$
+    description: |
+      an instant in time - known at least to the second
+      and always includes a time zone.
+
+  FhirDateTime:
+    type: string
+    pattern: ^[0-9]{4}(-(0[1-9]|1[0-2])(-(0[0-9]|[1-2][0-9]|3[0-1])(T([01][0-9]|2[0-3]):[0-5][0-9]:[0-5][0-9](\.[0-9]+)?(Z|(\+|-)((0[0-9]|1[0-3]):[0-5][0-9]|14:00)))?)?)?$
+    description: A date, date-time or partial date
+
+  AnswerKeyAttester:
+    title: Answer Key Attester
+    type: object
+    properties:
+      mode:
+        type: array
+        items:
+          $ref: '#/definitions/AttesterMode'
+      time:
+        $ref: '#/definitions/FhirDateTime'
+      party:
+        $ref: '#/definitions/FhirReference'
+        description: |
+          Party should be a reference to a Patient, Practitioner, or Organization
+
+  AttesterMode:
+    type: string
+    enum:
+      - personal
+      - professional
+      - legal
+      - official
+
+  AnswerKeyResource:
+    title: Answer Key Resource
+    allOf:
+    - $ref: '#/definitions/FhirDomainResource'
+    - type: object
+      properties:
+        attester:
+          type: array
+          items:
+            $ref: '#/definitions/AnswerKeyAttester'
+        author:
+          type: array
+          description: |
+            reference to a Patient, Practitioner, Device, or RelatedPerson
+          items:
+            $ref: '#/definitions/FhirReference'
+        confidentiality:
+          type: string
+        date:
+          $ref: '#/definitions/FhirTimeInstant'
+        section:
+          type: array
+          items:
+            $ref: '#/definitions/AnswerKeySection'
+        status:
+          title: Composition Status
+          type: string
+          description: |
+            The values listed in FHIR 6.8.3.1 (shown below) differ from the
+            composition-status value set in FHIR 1.25.2.1.123
+          enum:
+            - preliminary
+            - final
+            - amended
+            - appended
+            - retracted
+        subject:
+          $ref: '#/definitions/FhirReference'
+        title:
+          type: string
+          description: human-readable title of Composition
+        type:
+          $ref: '#/definitions/FhirCodeableConcept'
+
+  AnswerKeySection:
+    type: object
+    properties:
+      code:
+        $ref: '#/definitions/FhirCodeableConcept'
+      entry:
+        type: array
+        items:
+          $ref: '#/definitions/FhirReference'
+      mode:
+        type: string
+        enum:
+          - working
+          - snapshot
+          - changes
+      title:
+        type: string
+        description: label for the section
+      text:
+        $ref: '#/definitions/FhirNarrative'
+      orderedBy:
+        $ref: '#/definitions/FhirCodeableConcept'
+      emptyReason:
+        $ref: '#/definitions/FhirCodeableConcept'
+        description: reason this section is empty
+
+  FhirCodeableConcept:
+    type: object
+    properties:
+      coding:
+        type: array
+        items:
+          $ref: '#/definitions/FhirCoding'
+      text:
+        type: string
+
+  FhirCoding:
+    type: object
+    properties:
+      display:
+        type: string
+      code:
+        type: string
+      system:
+        type: string
+      version:
+        type: string
+      userSelected:
+        type: boolean
+
+  FhirReference:
+    type: object
+    properties:
+      display:
+        type: string
+      reference:
+        type: string
+
+  FhirLink:
+    title: FhirLink
+    type: object
+    required:
+      - relation
+      - url
+    properties:
+      relation:
+        type: string
+        minLength: 1
+      url:
+        type: string
+        minLength: 1
+
+  FhirSearchResultInfo:
+    title: Search Result Info
+    type: object
+    properties:
+      mode:
+        type: string
+        enum:
+          - match
+      score:
+        type: number
+    required:
+      - mode
+      - score
+
+
+  FhirNarrative:
+    type: object
+    description: A human-readable formatted text
+    properties:
+      status:
+        type: string
+        enum:
+          - generated
+          - extensions
+          - additional
+          - empty
+        description: status of the narrative - whether it's entirely generated (from just the defined data or the extensions too), or whether a human authored it and it may contain additional data
+      div:
+        type: string
+        minLength: 1
+        description:  narrative content, a stripped down version of (escaped) XHTML
+    required:
+      - status
+      - div
+
+  AnswerKeyEntry:
+    title: Entry
+    type: object
+    required:
+      - fullUrl
+    properties:
+      fullUrl:
+        type: string
+        minLength: 1
+      link:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/FhirLink'
+      resource:
+        $ref: '#/definitions/AnswerKeyResource'
+      search:
+        $ref: '#/definitions/FhirSearchResultInfo'
+
+
+  AnswerKeyBundle:
+    type: object
+    description: |
+      An answer key specifies the links between matching records
+      in the corresponding record set.  An answer key is represented as a
+      FHIR Document, which is a FHIR Bundle with type, document.
+    allOf:
+    - $ref: '#/definitions/FhirBundleBase'
+    - type: object
+    properties:
+      type:
+        type: string
+        enum:
+        - document
+      entry:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/AnswerKeyEntry'
+    example:
+      resourceType: Bundle
+      id: 541a72a8-df75-4484-ac89-ac4923f03b81
+      meta:
+        lastUpdated: '2016-05-28T18:12:21-04:00'
+      type: document
+      entry:
+        - fullUrl: 'http://localhost:3001/Composition/180f219f-97a8-486d-99d9-ed631fe4fc57'
+          resource:
+            id: 180f219f-97a8-486d-99d9-ed631fe4fc57
+            attester:
+              - mode:
+                  - professional
+                time: '2016-05-28T18:12:21-04:00'
+                party:
+                  display: Good Health Clinic
+                  reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+            author:
+              - display: Doctor Adam
+                reference: Practitioner/example
+            confidentiality: 'N'
+            date: '2016-02-01T07:30:02-05:00'
+            meta:
+              lastUpdated: '2016-02-28T18:12:21-04:00'
+            resourceType: Composition
+            section:
+              - code:
+                  coding:
+                    - code: 10001-2
+                      display: Matching Record
+                      system: 'https://github.com/mitre/ptmatch'
+                entry:
+                  - reference: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+                  - reference: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+                  - reference: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+                mode: final
+                title: Matching Records
+              - code:
+                  coding:
+                    - code: 10001-3
+                      display: Record Set Description
+                      system: 'https://github.com/mitre/ptmatch'
+                entry:
+                  - reference: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+                title: Record Set Description
+            status: final
+            subject:
+              display: Males in Grand Rapids Record Set
+              reference: 'http://localhost:3001/RecordSet/5730c7efa29102555425ab98'
+            title: Answer Key
+            type:
+              coding:
+                - code: 10001-1
+                  system: 'https://github.com/mitre/ptmatch'
+              text: Collection of Matching Records
+        - fullUrl: 'http://localhost:3001/Practitioner/example'
+          resource:
+            id: example
+            identifier:
+              - system: 'http://www.acme.org/practitioners'
+                value: '23'
+            meta:
+              lastUpdated: '2016-05-05T12:13:03-04:00'
+            name:
+              family:
+                - Careful
+              given:
+                - Adam
+              prefix:
+                - Dr
+            resourceType: Practitioner
+        - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+          resource:
+            resourceType: Organization
+            id: 2.16.840.1.113883.19.5
+            text:
+              status: generated
+              div: |-
+                <div>
+
+                 <p>Good Health Clinic</p>
+
+                </div>
+            identifier:
+              - system: 'urn:ietf:rfc:3986'
+                value: 2.16.840.1.113883.19.5
+            name: Good Health Clinic
+        - fullUrl: 'urn:uuid:b89450ff-31ae-46f7-a305-580a323b16be'
+          resource:
+            id: b89450ff-31ae-46f7-a305-580a323b16be
+            parameter:
+              - name: type
+                valueString: master
+              - name: resourceType
+                valueString: Patient
+              - name: searchExpression
+                resource:
+                  parameter:
+                    - name: resourceUrl
+                      valueString: 'http://localhost:3001/Patient'
+                    - name: gender
+                      valueString: MALE
+                    - name: address-city
+                      valueString: Grand Rapids
+                    - name: address-state
+                      valueString: MI
+                  resourceType: Parameters
+            resourceType: Parameters
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda163a29102104bbf9994'
+          fullUrl: 'http://localhost:3001/Patient/56d5a89ca2910241fb142603'
+          search:
+            score: 1
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda249a29102104bbf9a0d'
+          fullUrl: 'http://localhost:3001/Patient/56dda203a29102104bbf99ea'
+          search:
+            score: 1
+        - link:
+            - relation: type
+              url: 'http://hl7.org/fhir/Patient'
+            - relation: related
+              url: 'http://localhost:3001/Patient/56dda164a29102104bbf99b7'
+          fullUrl: 'http://localhost:3001/Patient/56d5a89da2910241fb142626'
+          search:
+            score: 1
+
+  MessageEntry:
+    title: Entry
+    type: object
+    required:
+      - fullUrl
+    properties:
+      fullUrl:
+        type: string
+        minLength: 1
+      link:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/FhirLink'
+      resource:
+        $ref: '#/definitions/MessageResource'
+      search:
+        $ref: '#/definitions/FhirSearchResultInfo'
+
+  MessageResource:
+    title: Message Resource
+    allOf:
+    - $ref: '#/definitions/FhirDomainResource'
+    - type: object
+      properties:
+        timestamp:
+          $ref: '#/definitions/FhirTimeInstant'
+        event:
+          $ref: '#/definitions/FhirCoding'
+          description: |
+            The event for a record match request or response message will have a
+            system value, https://github.com/mitre/ptmatch/fhir/message-events and
+            a code, record-match.
+        response:
+          type: object
+          properties:
+            identifier:
+              type: string
+            code:
+              type: string
+              enum:
+                - ok
+                - transient-error
+                - fatal-error
+            details:
+              $ref: '#/definitions/FhirReference'
+        source:
+          type: object
+          description: message source application
+          required:
+            - endpoint
+          properties:
+            name:
+              type: string
+            software:
+              type: string
+            version:
+              type: string
+            endpoint:
+              type: string
+              description: actual source address or id
+            contact:
+              type: object
+        destination:
+          type: array
+          description: message destination application(s)
+          items:
+            type: object
+            required:
+              - endpoint
+            properties:
+              name:
+                type: string
+              endpoint:
+                type: string
+                description: actual destination address or id
+              target:
+                $ref: '#/definitions/FhirReference'
+        enterer:
+          $ref: '#/definitions/FhirReference'
+        author:
+          $ref: '#/definitions/FhirReference'
+        receiver:
+          $ref: '#/definitions/FhirReference'
+        responsible:
+          $ref: '#/definitions/FhirReference'
+        data:
+          type: array
+          description: |
+            reference to actual content of the message
+          items:
+            $ref: '#/definitions/FhirReference'
+        reason:
+          $ref: '#/definitions/FhirCodeableConcept'
+          description: cause of the event
+
+  MessageBundle:
+    type: object
+    description: |
+      The first entry contained in a Bundle of type message, is expected to be
+      a MessageHeader resource.
+    allOf:
+    - $ref: '#/definitions/FhirBundleBase'
+    - type: object
+    properties:
+      type:
+        type: string
+        enum:
+        - message
+      entry:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/MessageEntry'
+
+  RecordMatchRequestMessageBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/MessageBundle'
+    - type: object
+    example:
+      resourceType: Bundle
+      id: 5734b3173dc37e49116e4ee0
+      type: message
+      entry:
+      - fullUrl: urn:uuid:a41975cb-c961-4d17-9a06-8c49c95877c2
+        resource:
+          _id: a41975cb-c961-4d17-9a06-8c49c95877c2
+          data:
+          - reference: urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708
+          destination:
+          - endpoint: http://mitre.org/ptmatchadapter-fril
+            name: FRIL - Equal Weight - Accept 60
+          event:
+            code: record-match
+            system: https://github.com/mitre/ptmatch/fhir/message-events
+          resourceType: MessageHeader
+          source:
+            endpoint: http://mitre.org/ptmatch
+          timestamp: '2016-05-12T12:45:11.42-04:00'
+      - fullUrl: urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708
+        resource:
+          _id: 5062ba92-9ceb-467c-9894-8024f5629708
+          parameter:
+          - name: type
+            valueString: master
+          - name: resourceType
+            valueString: Patient
+          - name: searchExpression
+            resource:
+              parameter:
+              - name: resourceUrl
+                valueString: http://localhost:3001/Patient
+              - name: gender
+                valueString: MALE
+              resourceType: Parameters
+          resourceType: Parameters
+
+  RecordMatchResponseMessageBundle:
+    type: object
+    allOf:
+    - $ref: '#/definitions/MessageBundle'
+    - type: object
+
+  SearchExpressionParameters:
+    allOf:
+    - $ref: '#/definitions/Parameters'
+    - type: object
+    properties:
+      parameter:
+        type: array
+        items:
+          - $ref: '#/definitions/PatientSearchParameter'
+
+  Parameters:
+    type: object
+    properties:
+      resourceType:
+        type: string
+        enum:
+        - Parameters
+
+  PatientSearchParameter:
+    title: PatientSearchParameter
+    type: object
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        enum:
+        - resourceUrl
+        - active
+        - address
+        - address-city
+        - address-country
+        - address-postalcode
+        - address-state
+        - address-use
+        - animal-breed
+        - animal-species
+        - birthdate
+        # careprovider - unsupported?
+        - deathdate
+        - deceased
+        - email
+        - family
+        - gender
+        - given
+        - identifier
+        - language
+        #- link - unsupported?
+        - name
+        #- orgazniation - unsupported?
+        - phone
+        #- phonetic - unsupported?
+        - telecom
+      valueBoolean:
+        type: boolean
+      valueString:
+        type: string
+      valueToken:
+        type: string
+      valueInteger:
+        type: integer
+
+  RecordSetParameter:
+    title: Parameter
+    type: object
+    required:
+    - name
+    properties:
+      name:
+        type: string
+        enum:
+        - type
+        - resourceType
+        - searchExpression
+      valueString:
+        type: string
+        enum:
+        - master
+        - query
+        - Patient
+      resource:
+        $ref: '#/definitions/SearchExpressionParameters'
+
+  RecordSetParameters:
+    title: Record Set Parameters
+    allOf:
+    - $ref: '#/definitions/Parameters'
+    - type: object
+    properties:
+      parameter:
+        type: array
+        minItems: 1
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/RecordSetParameter'
