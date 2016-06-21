@@ -31,7 +31,7 @@ info:
       - describes network endpoint to a record matching system
 
     The relationships between these resources and other structures within them are depicted in the following diagram.
-    ![Resource Relationships](ResourceRelationships.png "Resource Relationships")
+    ![Resource Relationships](img/ResourceRelationships.png "Resource Relationships")
 
     ## Answer Key
     An Answer Key may be associated with a Record Set.  An answer key contains
@@ -47,9 +47,48 @@ info:
 
     The high level layout of an Answer Key is presented in the figure.
 
-    ![Answer Key Organization](AnswerKeyLayout.png "Answer Key Organization")
+    ![Answer Key Organization](img/AnswerKeyLayout.png "Answer Key Organization")
 
+    ### Answer Key Codes
+    The first entry in an Answer Key is a Composition Resource.  Two codes specific
+    to an Answer Key are used in the Composition Resource.
 
+    * Composition.type - identifies the type of composition
+      * coding.display: Answer Key
+      * coding.system:  https://github.com/mitre/ptmatch
+      * coding.code:    10001-1
+    * Composition.section.code - specifies the purpose of the section. In an
+    Answer Key, the section with this code references the entries that link the
+    matching records.
+      * coding.display:  Matching Record
+      * coding.system:   https://github.com/mitre/ptmatch
+      * coding.code:     10001-2
+
+    ### Annotated Answer Key Example
+    #### Bundle Introduction
+    An Answer Key is a FHIR Document, which is a Bundle with type, document.
+    ![Answer Key Introduction](img/answerKeyIntroSection.png "Answer Key Introduction")
+    #### The First Entry - Composition Resource
+    The first entry of a FHIR Document is expected to be a Composition Resource
+    (https://www.hl7.org/fhir/documents.html#content). The Composition Resource
+    describes the identity, purpose and context for the document. Any resource
+    referenced in the Composition resource must be included in a subsequent
+    entry in this bundle.
+    ![Answer Key Composition](img/answerKeyCompositionResource.png "Answer Key Composition")
+    #### Subject
+    The entry contains the information used to construct the FHIR search expression
+    that represents the population of records to which this Answer Key applies.
+    ![Answer Key Search Expression](img/answerKeySearchExpression.png "Answer Key Search Expression")
+    #### Other References - Author and Attester
+    A Composition Resource may contain several different types of references,
+    including the document author, attester, or custodian.
+    ![Answer Key Author](img/answerKeyAuthorAttester.png "Answer Key Search Author and Attester")
+    #### Linked Records
+    These entries relate two records considered to refer to the same Patient.
+    The expected values for search score are 1 to explicitly refer to a match and
+    0 to explicitly declare a non-match.  The meaning other values is currently
+    undefined.
+    ![Answer Key Linked Records](img/answerKeyLinkedRecords.png "Answer Key Linked Records")
 
     ## Additional Information
     * [ptmatch GitHub site](https://github.com/mitre/ptmatch/ "ptmatch GitHub Site")
@@ -101,7 +140,9 @@ paths:
           type: string
         - name: answerKey
           in: formData
-          description: JSON-formatted FHIR Bundle of type  Document that represents the answer key.  The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
+          description: |
+            JSON-formatted FHIR Bundle of type  Document that represents the answer key.
+            The file content is an [AnswerKeyBundle](#/definitions/AnswerKeyBundle)
           required: true
           type: file
       responses:
@@ -277,13 +318,11 @@ paths:
                             name: FRIL - Equal Weight - Accept 60
                         event:
                           code: record-match
-                          system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                         resourceType: MessageHeader
                         source:
                           endpoint: 'http://mitre.org/ptmatch'
-                        timestamp:
-                          precision: timestamp
-                          time: '2016-05-26T08:48:46.703-04:00'
+                        timestamp: '2016-05-26T08:48:46.703-04:00'
                     - fullUrl: 'urn:uuid:8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1'
                       resource:
                         _id: 8d2ca990-bbcf-4275-8de8-7cf1cf93c8b1
@@ -325,7 +364,7 @@ paths:
                             - endpoint: 'http://mitre.org/ptmatch'
                           event:
                             code: record-match
-                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                           resourceType: MessageHeader
                           response:
                             code: ok
@@ -333,9 +372,7 @@ paths:
                           source:
                             endpoint: 'http://mitre.org/ptmatchadapter-fril'
                             name: ptmatchAdapter-fril
-                          timestamp:
-                            precision: timestamp
-                            time: '2016-05-26T08:49:15.581-04:00'
+                          timestamp: '2016-05-26T08:49:15.581-04:00'
                   receivedOn: '2016-05-26T08:49:15.679-04:00'
                 - id: 5746f0cba7fc203dc7e4642a
                   meta:
@@ -357,7 +394,7 @@ paths:
                             - endpoint: 'http://mitre.org/ptmatch'
                           event:
                             code: record-match
-                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                           resourceType: MessageHeader
                           response:
                             code: fatal-error
@@ -365,9 +402,7 @@ paths:
                           source:
                             endpoint: 'http://mitre.org/ptmatchadapter-fril'
                             name: FRIL - Equal Weight - Accept 60
-                          timestamp:
-                            precision: timestamp
-                            time: '2016-05-26T08:49:15.66-04:00'
+                          timestamp: '2016-05-26T08:49:15.66-04:00'
                       - fullUrl: 'urn:uuid:00428457-13a6-45ea-8a12-43ebb7ad945b'
                         resource:
                           _id: 5746f0cba7fc203dc7e4642c
@@ -438,13 +473,11 @@ paths:
                             name: FRIL - Equal Weight - Accept 60
                         event:
                           code: record-match
-                          system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                          system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                         resourceType: MessageHeader
                         source:
                           endpoint: 'http://mitre.org/ptmatch'
-                        timestamp:
-                          precision: timestamp
-                          time: '2016-06-02T08:15:50.598-04:00'
+                        timestamp: '2016-06-02T08:15:50.598-04:00'
                     - fullUrl: 'urn:uuid:ff483dfa-b959-4eff-8751-6c09634d27d4'
                       resource:
                         _id: ff483dfa-b959-4eff-8751-6c09634d27d4
@@ -486,7 +519,7 @@ paths:
                             - endpoint: 'http://mitre.org/ptmatch'
                           event:
                             code: record-match
-                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                           resourceType: MessageHeader
                           response:
                             code: ok
@@ -494,9 +527,7 @@ paths:
                           source:
                             endpoint: 'http://mitre.org/ptmatchadapter-fril'
                             name: ptmatchAdapter-fril
-                          timestamp:
-                            precision: timestamp
-                            time: '2016-06-02T08:16:13.296-04:00'
+                          timestamp: '2016-06-02T08:16:13.296-04:00'
                   receivedOn: '2016-06-02T08:16:13.432-04:00'
                 - id: 5750238ea7fc204288bba7f7
                   meta:
@@ -518,7 +549,7 @@ paths:
                             - endpoint: 'http://mitre.org/ptmatch'
                           event:
                             code: record-match
-                            system: 'http://github.com/mitre/ptmatch/fhir/message-events'
+                            system: 'https://github.com/mitre/ptmatch/fhir/message-events'
                           resourceType: MessageHeader
                           response:
                             code: ok
@@ -526,9 +557,7 @@ paths:
                           source:
                             endpoint: 'http://mitre.org/ptmatchadapter-fril'
                             name: FRIL - Equal Weight - Accept 60
-                          timestamp:
-                            precision: timestamp
-                            time: '2016-06-02T08:16:14.343-04:00'
+                          timestamp: '2016-06-02T08:16:14.343-04:00'
                       - fullUrl: 'urn:uuid:f3d647d9-536b-4ca8-aeaf-2099b077f36f'
                         resource:
                           _id: 5750238ea7fc204288bba7f9
@@ -874,13 +903,9 @@ paths:
                         - display: Doctor Adam
                           reference: Practitioner/example
                       confidentiality: 'N'
-                      date:
-                        precision: timestamp
-                        time: '2016-02-01T07:30:02-05:00'
+                      date: '2016-02-01T07:30:02-05:00'
                       meta:
-                        lastUpdated:
-                          precision: timestamp
-                          time: '2016-05-28T18:12:21-04:00'
+                        lastUpdated: '2016-05-28T18:12:21-04:00'
                       resourceType: Composition
                       section:
                         - code:
@@ -927,9 +952,7 @@ paths:
                         - system: 'http://www.acme.org/practitioners'
                           value: '23'
                       meta:
-                        lastUpdated:
-                          precision: timestamp
-                          time: '2016-05-05T12:13:03-04:00'
+                        lastUpdated: '2016-05-05T12:13:03-04:00'
                       name:
                         family:
                           - Careful
@@ -1444,26 +1467,6 @@ definitions:
       text:
         $ref: '#/definitions/FhirNarrative'
 
-  FhirEntry:
-    title: Entry
-    type: object
-    required:
-      - fullUrl
-    properties:
-      fullUrl:
-        type: string
-        minLength: 1
-      link:
-        type: array
-        uniqueItems: true
-        minItems: 1
-        items:
-          $ref: '#/definitions/FhirLink'
-      resource:
-        $ref: '#/definitions/FhirDomainResource'
-      search:
-        $ref: '#/definitions/FhirSearchResultInfo'
-
   FhirDomainResource:
     title: FhirDomainResource
     type: object
@@ -1541,11 +1544,15 @@ definitions:
         status:
           title: Composition Status
           type: string
+          description: |
+            The values listed in FHIR 6.8.3.1 (shown below) differ from the
+            composition-status value set in FHIR 1.25.2.1.123
           enum:
             - preliminary
             - final
             - amended
-            - entered-in-error
+            - appended
+            - retracted
         subject:
           $ref: '#/definitions/FhirReference'
         title:
@@ -1835,8 +1842,108 @@ definitions:
           search:
             score: 1
 
+  MessageEntry:
+    title: Entry
+    type: object
+    required:
+      - fullUrl
+    properties:
+      fullUrl:
+        type: string
+        minLength: 1
+      link:
+        type: array
+        uniqueItems: true
+        minItems: 1
+        items:
+          $ref: '#/definitions/FhirLink'
+      resource:
+        $ref: '#/definitions/MessageResource'
+      search:
+        $ref: '#/definitions/FhirSearchResultInfo'
+
+  MessageResource:
+    title: Message Resource
+    allOf:
+    - $ref: '#/definitions/FhirDomainResource'
+    - type: object
+      properties:
+        timestamp:
+          $ref: '#/definitions/FhirTimeInstant'
+        event:
+          $ref: '#/definitions/FhirCoding'
+          description: |
+            The event for a record match request or response message will have a
+            system value, https://github.com/mitre/ptmatch/fhir/message-events and
+            a code, record-match.
+        response:
+          type: object
+          properties:
+            identifier:
+              type: string
+            code:
+              type: string
+              enum:
+                - ok
+                - transient-error
+                - fatal-error
+            details:
+              $ref: '#/definitions/FhirReference'
+        source:
+          type: object
+          description: message source application
+          required:
+            - endpoint
+          properties:
+            name:
+              type: string
+            software:
+              type: string
+            version:
+              type: string
+            endpoint:
+              type: string
+              description: actual source address or id
+            contact:
+              type: object
+        destination:
+          type: array
+          description: message destination application(s)
+          items:
+            type: object
+            required:
+              - endpoint
+            properties:
+              name:
+                type: string
+              endpoint:
+                type: string
+                description: actual destination address or id
+              target:
+                $ref: '#/definitions/FhirReference'
+        enterer:
+          $ref: '#/definitions/FhirReference'
+        author:
+          $ref: '#/definitions/FhirReference'
+        receiver:
+          $ref: '#/definitions/FhirReference'
+        responsible:
+          $ref: '#/definitions/FhirReference'
+        data:
+          type: array
+          description: |
+            reference to actual content of the message
+          items:
+            $ref: '#/definitions/FhirReference'
+        reason:
+          $ref: '#/definitions/FhirCodeableConcept'
+          description: cause of the event
+
   MessageBundle:
     type: object
+    description: |
+      The first entry contained in a Bundle of type message, is expected to be
+      a MessageHeader resource.
     allOf:
     - $ref: '#/definitions/FhirBundleBase'
     - type: object
@@ -1850,7 +1957,7 @@ definitions:
         uniqueItems: true
         minItems: 1
         items:
-          $ref: '#/definitions/FhirEntry'
+          $ref: '#/definitions/MessageEntry'
 
   RecordMatchRequestMessageBundle:
     type: object
@@ -1872,13 +1979,11 @@ definitions:
             name: FRIL - Equal Weight - Accept 60
           event:
             code: record-match
-            system: http://github.com/mitre/ptmatch/fhir/message-events
+            system: https://github.com/mitre/ptmatch/fhir/message-events
           resourceType: MessageHeader
           source:
             endpoint: http://mitre.org/ptmatch
-          timestamp:
-            precision: timestamp
-            time: '2016-05-12T12:45:11.42-04:00'
+          timestamp: '2016-05-12T12:45:11.42-04:00'
       - fullUrl: urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708
         resource:
           _id: 5062ba92-9ceb-467c-9894-8024f5629708

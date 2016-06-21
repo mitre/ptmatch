@@ -4,7 +4,7 @@ This project is an implementation of the services described in [Patient Matching
 It provides the REST/JSON based services to handle the management of record matching system entries, test data sets and matching runs.
 
 This project builds on the [Intervention Engine FHIR Server](https://github.com/intervention-engine/fhir) for all FHIR services. A web
-based user interface for this project is provided in the [Patient Match Frontend Project](https://github.com/mitre/ptmatch-frontend). 
+based user interface for this project is provided in the [Patient Match Frontend Project](https://github.com/mitre/ptmatch-frontend).
 
 ## Environment
 
@@ -35,6 +35,18 @@ This project also requires MongoDB 3.2.* or higher. To install MongoDB, refer to
 To start the application, simply run main.go:
 
     go run main.go
+
+
+## API Documentation
+
+When the test harness is running, documentation on the REST API can be accessed at:
+
+<server base url>/ptmatch/api
+
+The default base url for the test harness server is http://localhost:3001
+
+The OPEN API (aka Swagger 2.0) (https://github.com/OAI/OpenAPI-Specification)
+YAML file for the test harness' REST API is in the api folder.
 
 ## License
 
