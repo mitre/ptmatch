@@ -106,3 +106,19 @@ func (rmr *RecordMatchRun) GetLinks() []Link {
 	sort.Sort(LinkSlice(links))
 	return links
 }
+
+func (rmr *RecordMatchRun) GetWorstLinks(count int) []Link {
+	links := rmr.GetLinks()
+	if count >= len(links) {
+		return links
+	}
+	return links[:count]
+}
+
+func (rmr *RecordMatchRun) GetBestLinks(count int) []Link {
+	links := rmr.GetLinks()
+	if count >= len(links) {
+		return links
+	}
+	return links[len(links)-count : len(links)]
+}

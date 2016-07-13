@@ -20,6 +20,7 @@ import (
 	"bytes"
 	"fmt"
 	"net/http"
+	"strconv"
 	"strings"
 	"time"
 
@@ -181,6 +182,33 @@ func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerF
 		}
 
 		ctx.JSON(http.StatusOK, resources)
+	}
+}
+
+func GetRecordMatchRunLinksHandler(provider func() *mgo.Database) gin.HandlerFunc {
+	return func(ctx *gin.Context) {
+		idString := ctx.Param("id")
+		id := bson.ObjectIdHex(idString)
+		c := provider().C(ptm_models.GetCollectionName("RecordMatchRun"))
+		rmr := &ptm_models.RecordMatchRun{}
+		err := c.Find(bson.M{"_id": id}).One(rmr)
+		if err != nil {
+			ctx.AbortWithError(http.StatusInternalServerError, err)
+			return
+		}
+		category := ctx.Query("category")
+		limitString := ctx.Query("limit")
+		limit, err := strconv.ParseInt(limitString, 10, 0)
+		if err != nil || limit == 0 {
+			limit = 10
+		}
+		var links []ptm_models.Link
+		if category == "worst" {
+			links = rmr.GetWorstLinks(int(limit))
+		} else {
+			links = rmr.GetBestLinks(int(limit))
+		}
+		ctx.JSON(http.StatusOK, links)
 	}
 }
 

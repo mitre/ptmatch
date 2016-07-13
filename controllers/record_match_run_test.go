@@ -17,13 +17,19 @@ limitations under the License.
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"github.com/mitre/ptmatch/logger"
+	"github.com/pebbe/util"
 
 	ptm_models "github.com/mitre/ptmatch/models"
 )
@@ -61,6 +67,7 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 
 func (s *ServerSuite) TearDownTest(c *C) {
 	if database != nil {
+		database.C("recordMatchRuns").DropCollection()
 		database.C("recordMatchContexts").DropCollection()
 		database.C("recordMatchSystemInterfaces").DropCollection()
 	}
@@ -73,6 +80,31 @@ func (s *ServerSuite) TearDownSuite(c *C) {
 	if mongoSession != nil {
 		mongoSession.Close()
 	}
+}
+
+func (s *ServerSuite) TestGetRecordMatchRunLinks(c *C) {
+	resource := ptm_models.InsertResourceFromFile(database, "RecordMatchRun", "../fixtures/record-match-run-responses.json")
+	rmr := resource.(*ptm_models.RecordMatchRun)
+	provider := func() *mgo.Database { return database }
+	handler := GetRecordMatchRunLinksHandler(provider)
+	url := fmt.Sprintf("/RecordMatchRunLinks/%s?limit=2", rmr.ID.Hex())
+	r, err := http.NewRequest("GET", url, nil)
+	util.CheckErr(err)
+	e := gin.New()
+	rw := httptest.NewRecorder()
+	e.GET("/RecordMatchRunLinks/:id", handler)
+	e.ServeHTTP(rw, r)
+	c.Assert(rw.Code, Equals, http.StatusOK)
+	var links []ptm_models.Link
+	decoder := json.NewDecoder(rw.Body)
+	err = decoder.Decode(&links)
+	util.CheckErr(err)
+	c.Assert(len(links), Equals, 2)
+	lastLink := links[1]
+	c.Assert(lastLink.Score, Equals, 0.82)
+	c.Assert(lastLink.Source, Equals, "http://localhost:3001/Patient/5616b69a1cd462440e0006ae")
+	c.Assert(lastLink.Target, Equals, "http://localhost:3001/Patient/57335da265ddb433bd30f0ee")
+	c.Assert(lastLink.Match, Equals, "probable")
 }
 
 func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
