@@ -90,9 +90,9 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	name := "RecordMatchRun"
 	svr.Engine.GET("/"+name, controller.GetResources)
 	svr.Engine.GET("/"+name+"/:id", controller.GetResource)
-	svr.Engine.POST("/"+name, rc.CreateRecordMatchRunHandler(Database()))
+	svr.Engine.POST("/"+name, rc.CreateRecordMatchRunHandler(Database))
 	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
 	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
 
-	svr.Engine.GET("/RecordMatchRunMetrics", rc.GetRecordMatchRunMetricsHandler(Database()))
+	svr.Engine.GET("/RecordMatchRunMetrics", rc.GetRecordMatchRunMetricsHandler(Database))
 }

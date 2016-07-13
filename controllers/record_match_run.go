@@ -38,7 +38,7 @@ import (
 
 // CreateRecordMatchRunHandler creates a HandlerFunc that creates a new
 // RecordMatchRun and constructs and sends a Record Match request message.
-func CreateRecordMatchRunHandler(db *mgo.Database) gin.HandlerFunc {
+func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		recMatchRun := &ptm_models.RecordMatchRun{}
 		if err := ctx.Bind(recMatchRun); err != nil {
@@ -66,7 +66,7 @@ func CreateRecordMatchRunHandler(db *mgo.Database) gin.HandlerFunc {
 		}
 
 		// Retrieve the info about the record matcher
-		obj, err := ptm_models.LoadResource(db, "RecordMatchSystemInterface",
+		obj, err := ptm_models.LoadResource(provider(), "RecordMatchSystemInterface",
 			recMatchRun.RecordMatchSystemInterfaceID)
 		if err != nil {
 			ctx.String(http.StatusBadRequest, "Unable to find Record Match System Interface")
@@ -81,7 +81,7 @@ func CreateRecordMatchRunHandler(db *mgo.Database) gin.HandlerFunc {
 		}
 
 		// construct a record match request
-		reqMatchRequest := newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchRun, db)
+		reqMatchRequest := newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchRun, provider())
 		// attach the request message to the run object
 		recMatchRun.Request = *reqMatchRequest
 
@@ -120,22 +120,17 @@ func CreateRecordMatchRunHandler(db *mgo.Database) gin.HandlerFunc {
 		}
 
 		// Persist the record match run
-		resource, err := ptm_models.PersistResource(db, "RecordMatchRun", recMatchRun)
+		resource, err := ptm_models.PersistResource(provider(), "RecordMatchRun", recMatchRun)
 		if err != nil {
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
 
-		/*
-			logger.Log.WithFields(
-				logrus.Fields{"collection": ptm_models.GetCollectionName(resourceType),
-					"res type": resourceType, "id": id}).Info("CreateResource")
-		*/
 		ctx.JSON(http.StatusCreated, resource)
 	}
 }
 
-func GetRecordMatchRunMetricsHandler(db *mgo.Database) gin.HandlerFunc {
+func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerFunc {
 	return func(ctx *gin.Context) {
 		resourceType := "RecordMatchRun"
 
@@ -148,7 +143,7 @@ func GetRecordMatchRunMetricsHandler(db *mgo.Database) gin.HandlerFunc {
 			logrus.Fields{"resource type": resourceType, "rec match sys": recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchRunMetrics")
 
 		resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
-		c := db.C(ptm_models.GetCollectionName(resourceType))
+		c := provider().C(ptm_models.GetCollectionName(resourceType))
 
 		var query *mgo.Query
 
