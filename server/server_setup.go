@@ -97,4 +97,5 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 	svr.Engine.GET("/RecordMatchRunMetrics", rc.GetRecordMatchRunMetricsHandler(Database))
 	svr.Engine.GET("/RecordMatchRunLinks/:id", rc.GetRecordMatchRunLinksHandler(Database))
 
+	svr.Engine.Static("/ptmatch/api/", "api")
 }
