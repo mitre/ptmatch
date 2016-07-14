@@ -1,0 +1,334 @@
+{
+  "id": "576173e95b5b8b9296b3f947",
+  "meta": {
+    "createdOn": "2016-05-12T12:45:11.429-04:00",
+    "lastUpdatedOn": "2016-05-12T12:45:11.429-04:00"
+  },
+  "note": "First run",
+  "recordMatchContextId": "57597a52fb0482af6543f354",
+  "request": {
+    "id": "5734b3173dc37e49116e4edf",
+    "meta": {
+      "createdOn": "2016-05-12T12:45:11.424-04:00",
+      "lastUpdatedOn": "0001-01-01T00:00:00Z"
+    },
+    "message": {
+      "resourceType": "Bundle",
+      "id": "5734b3173dc37e49116e4ee0",
+      "type": "message",
+      "entry": [
+        {
+          "fullUrl": "urn:uuid:a41975cb-c961-4d17-9a06-8c49c95877c2",
+          "resource": {
+            "_id": "a41975cb-c961-4d17-9a06-8c49c95877c2",
+            "data": [
+              {
+                "reference": "urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708"
+              }
+            ],
+            "destination": [
+              {
+                "endpoint": "http://mitre.org/ptmatchadapter-fril",
+                "name": "FRIL - Equal Weight - Accept 60"
+              }
+            ],
+            "event": {
+              "code": "record-match",
+              "system": "http://github.com/mitre/ptmatch/fhir/message-events"
+            },
+            "resourceType": "MessageHeader",
+            "source": {
+              "endpoint": "http://mitre.org/ptmatch"
+            },
+            "timestamp": {
+              "precision": "timestamp",
+              "time": "2016-05-12T12:45:11.42-04:00"
+            }
+          }
+        },
+        {
+          "fullUrl": "urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708",
+          "resource": {
+            "_id": "5062ba92-9ceb-467c-9894-8024f5629708",
+            "parameter": [
+              {
+                "name": "type",
+                "valueString": "master"
+              },
+              {
+                "name": "resourceType",
+                "valueString": "Patient"
+              },
+              {
+                "name": "searchExpression",
+                "resource": {
+                  "parameter": [
+                    {
+                      "name": "resourceUrl",
+                      "valueString": "http://localhost:3001/Patient"
+                    },
+                    {
+                      "name": "gender",
+                      "valueString": "MALE"
+                    }
+                  ],
+                  "resourceType": "Parameters"
+                }
+              }
+            ],
+            "resourceType": "Parameters"
+          }
+        }
+      ]
+    },
+    "submittedOn": "0001-01-01T00:00:00Z"
+  },
+  "responses": [
+    {
+      "id": "5734b343218de24972dabd21",
+      "meta": {
+        "createdOn": "2016-05-12T12:45:55.59-04:00",
+        "lastUpdatedOn": "2016-05-12T12:45:55.59-04:00"
+      },
+      "message": {
+        "resourceType": "Bundle",
+        "id": "5734b343218de24972dabd21",
+        "meta": {
+          "lastUpdated": "2016-05-12T12:45:55-04:00"
+        },
+        "type": "message",
+        "entry": [
+          {
+            "fullUrl": "12dab49b-b8b0-4407-895e-296177856129",
+            "resource": {
+              "_id": "5734b343218de24972dabd22",
+              "destination": [
+                {
+                  "endpoint": "http://mitre.org/ptmatch"
+                }
+              ],
+              "event": {
+                "code": "record-match",
+                "system": "http://github.com/mitre/ptmatch/fhir/message-events"
+              },
+              "resourceType": "MessageHeader",
+              "response": {
+                "code": "ok",
+                "identifier": "a41975cb-c961-4d17-9a06-8c49c95877c2"
+              },
+              "source": {
+                "endpoint": "http://mitre.org/ptmatchadapter-fril",
+                "name": "ptmatchAdapter-fril"
+              },
+              "timestamp": {
+                "precision": "timestamp",
+                "time": "2016-05-12T12:45:55.568-04:00"
+              }
+            }
+          }
+        ]
+      },
+      "receivedOn": "2016-05-12T12:45:55.59-04:00"
+    },
+    {
+      "id": "5734b343218de24972dabd23",
+      "meta": {
+        "createdOn": "2016-05-12T12:45:56.004-04:00",
+        "lastUpdatedOn": "2016-05-12T12:45:56.004-04:00"
+      },
+      "message": {
+        "resourceType": "Bundle",
+        "id": "5734b343218de24972dabd23",
+        "meta": {
+          "lastUpdated": "2016-05-12T12:45:56-04:00"
+        },
+        "type": "message",
+        "entry": [
+          {
+            "fullUrl": "urn:uuid:43869c10-cfc6-47d3-843d-a40c31550685",
+            "resource": {
+              "_id": "5734b343218de24972dabd24",
+              "data": [
+                {
+                  "external": false,
+                  "reference": "urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708"
+                }
+              ],
+              "destination": [
+                {
+                  "endpoint": "http://mitre.org/ptmatch"
+                }
+              ],
+              "event": {
+                "code": "record-match",
+                "system": "http://github.com/mitre/ptmatch/fhir/message-events"
+              },
+              "resourceType": "MessageHeader",
+              "response": {
+                "code": "ok",
+                "identifier": "a41975cb-c961-4d17-9a06-8c49c95877c2"
+              },
+              "source": {
+                "endpoint": "http://mitre.org/ptmatchadapter-fril",
+                "name": "FRIL - Equal Weight - Accept 60"
+              },
+              "timestamp": {
+                "precision": "timestamp",
+                "time": "2016-05-12T12:45:55.977-04:00"
+              }
+            }
+          },
+          {
+            "fullUrl": "urn:uuid:2b4db293-be03-42a1-953b-1a8e1de00468",
+            "resource": {
+              "_id": "5734b343218de24972dabd25",
+              "issue": [
+                {
+                  "code": "informational",
+                  "details": {
+                    "text": "Deduplication Complete"
+                  },
+                  "severity": "information"
+                }
+              ],
+              "resourceType": "OperationOutcome"
+            }
+          },
+          {
+            "fullUrl": "urn:uuid:5062ba92-9ceb-467c-9894-8024f5629708",
+            "resource": {
+              "_id": "5062ba92-9ceb-467c-9894-8024f5629708",
+              "parameter": [
+                {
+                  "name": "type",
+                  "valueString": "master"
+                },
+                {
+                  "name": "resourceType",
+                  "valueString": "Patient"
+                },
+                {
+                  "name": "searchExpression",
+                  "resource": {
+                    "parameter": [
+                      {
+                        "name": "resourceUrl",
+                        "valueString": "http://localhost:3001/Patient"
+                      },
+                      {
+                        "name": "gender",
+                        "valueString": "MALE"
+                      }
+                    ],
+                    "resourceType": "Parameters"
+                  }
+                }
+              ],
+              "resourceType": "Parameters"
+            }
+          },
+          {
+            "link": [
+              {
+                "relation": "type",
+                "url": "http://hl7.org/fhir/Patient"
+              },
+              {
+                "relation": "related",
+                "url": "http://localhost:3001/Patient/57334e7c65ddb4272a7db007"
+              }
+            ],
+            "fullUrl": "http://localhost:3001/Patient/5616b6991cd462440e00020e",
+            "search": {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/patient-mpi-match",
+                  "valueCode": "probable"
+                }
+              ],
+              "score": 0.55
+            }
+          },
+          {
+            "link": [
+              {
+                "relation": "type",
+                "url": "http://hl7.org/fhir/Patient"
+              },
+              {
+                "relation": "related",
+                "url": "http://localhost:3001/Patient/57335da265ddb433bd30f0ee"
+              }
+            ],
+            "fullUrl": "http://localhost:3001/Patient/5616b69a1cd462440e0006ae",
+            "search": {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/patient-mpi-match",
+                  "valueCode": "probable"
+                }
+              ],
+              "score": 0.82
+            }
+          },
+          {
+            "link": [
+              {
+                "relation": "type",
+                "url": "http://hl7.org/fhir/Patient"
+              },
+              {
+                "relation": "related",
+                "url": "http://localhost:3001/Patient/57335e8465ddb433bd30f0ef"
+              }
+            ],
+            "fullUrl": "http://localhost:3001/Patient/5616b6a11cd462440e001586",
+            "search": {
+              "extension": [
+                {
+                  "url": "http://hl7.org/fhir/StructureDefinition/patient-mpi-match",
+                  "valueCode": "probable"
+                }
+              ],
+              "score": 0.51
+            }
+          }
+        ]
+      },
+      "receivedOn": "2016-05-12T12:45:56.004-04:00"
+    }
+  ],
+  "metrics": {
+    "f1": 0.55,
+    "precision": 0.49,
+    "recall": 0.61,
+    "matchCount": 3,
+    "truePositiveCount": 3
+  },
+  "status": [
+    {
+      "message": "Request Sent [201 Created]",
+      "createdOn": "2016-05-12T12:45:11.429-04:00"
+    },
+    {
+      "message": "Response Received [5734b343218de24972dabd21]",
+      "createdOn": "2016-05-12T12:45:55.59-04:00"
+    },
+    {
+      "message": "Metrics Updated [5734b343218de24972dabd21]",
+      "createdOn": "2016-05-12T12:45:55.594-04:00"
+    },
+    {
+      "message": "Response Received [5734b343218de24972dabd23]",
+      "createdOn": "2016-05-12T12:45:56.004-04:00"
+    },
+    {
+      "message": "Metrics Updated [5734b343218de24972dabd23]",
+      "createdOn": "2016-05-12T12:45:56.009-04:00"
+    }
+  ],
+  "matchingMode": "deduplication",
+  "recordResourceType": "Patient",
+  "recordMatchSystemInterfaceId": "575972f3fb0482af6543f34f",
+  "masterRecordSetId": "57334a0665ddb4272a7db000"
+}

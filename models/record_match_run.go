@@ -17,6 +17,7 @@ limitations under the License.
 package models
 
 import (
+	"sort"
 	"time"
 
 	"gopkg.in/mgo.v2/bson"
@@ -58,4 +59,66 @@ type RecordMatchRunMetrics struct {
 type RecordMatchRunStatusComponent struct {
 	Message   string    `bson:"message" json:"message"`
 	CreatedOn time.Time `bson:"createdOn,omitempty" json:"createdOn,omitempty"`
+}
+
+// Link is not part of FHIR. It is a simplified representation of a suggested
+// link (or lack thereof) between two records.
+type Link struct {
+	Source string  `json:"source"`
+	Target string  `json:"target"`
+	Match  string  `json:"match"`
+	Score  float64 `json:"score"`
+}
+
+// LinkSlice is needed as a holder for the functions to work with the sort
+// package
+type LinkSlice []Link
+
+func (ls LinkSlice) Len() int           { return len(ls) }
+func (ls LinkSlice) Swap(i, j int)      { ls[i], ls[j] = ls[j], ls[i] }
+func (ls LinkSlice) Less(i, j int) bool { return ls[i].Score < ls[j].Score }
+
+// GetLinks searches all responses to the match run and creates a []Link that is
+// sorted by Score.
+func (rmr *RecordMatchRun) GetLinks() []Link {
+	var links []Link
+	for _, response := range rmr.Responses {
+		for _, entry := range response.Message.Entry {
+			if len(entry.Link) == 2 {
+				source := entry.FullUrl
+				var target string
+				for _, l := range entry.Link {
+					if l.Relation == "related" {
+						target = l.Url
+					}
+				}
+				var match string
+				for _, e := range entry.Search.Extension {
+					if e.Url == "http://hl7.org/fhir/StructureDefinition/patient-mpi-match" {
+						match = e.ValueCode
+					}
+				}
+				score := *entry.Search.Score
+				links = append(links, Link{source, target, match, score})
+			}
+		}
+	}
+	sort.Sort(LinkSlice(links))
+	return links
+}
+
+func (rmr *RecordMatchRun) GetWorstLinks(count int) []Link {
+	links := rmr.GetLinks()
+	if count >= len(links) {
+		return links
+	}
+	return links[:count]
+}
+
+func (rmr *RecordMatchRun) GetBestLinks(count int) []Link {
+	links := rmr.GetLinks()
+	if count >= len(links) {
+		return links
+	}
+	return links[len(links)-count : len(links)]
 }

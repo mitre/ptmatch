@@ -17,13 +17,19 @@ limitations under the License.
 package controllers
 
 import (
+	"encoding/json"
+	"fmt"
+	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	. "gopkg.in/check.v1"
 	"gopkg.in/mgo.v2"
 
 	"github.com/Sirupsen/logrus"
+	"github.com/gin-gonic/gin"
 	"github.com/mitre/ptmatch/logger"
+	"github.com/pebbe/util"
 
 	ptm_models "github.com/mitre/ptmatch/models"
 )
@@ -31,7 +37,6 @@ import (
 var (
 	mongoSession *mgo.Session
 	database     *mgo.Database
-	controller   ResourceController
 )
 
 type ServerSuite struct {
@@ -58,13 +63,11 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 
 	database = mongoSession.DB(s.DatabaseName)
 	c.Assert(database, NotNil)
-
-	controller = ResourceController{}
-	controller.DatabaseProvider = func() *mgo.Database { return database }
 }
 
 func (s *ServerSuite) TearDownTest(c *C) {
 	if database != nil {
+		database.C("recordMatchRuns").DropCollection()
 		database.C("recordMatchContexts").DropCollection()
 		database.C("recordMatchSystemInterfaces").DropCollection()
 	}
@@ -77,6 +80,31 @@ func (s *ServerSuite) TearDownSuite(c *C) {
 	if mongoSession != nil {
 		mongoSession.Close()
 	}
+}
+
+func (s *ServerSuite) TestGetRecordMatchRunLinks(c *C) {
+	resource := ptm_models.InsertResourceFromFile(database, "RecordMatchRun", "../fixtures/record-match-run-responses.json")
+	rmr := resource.(*ptm_models.RecordMatchRun)
+	provider := func() *mgo.Database { return database }
+	handler := GetRecordMatchRunLinksHandler(provider)
+	url := fmt.Sprintf("/RecordMatchRunLinks/%s?limit=2", rmr.ID.Hex())
+	r, err := http.NewRequest("GET", url, nil)
+	util.CheckErr(err)
+	e := gin.New()
+	rw := httptest.NewRecorder()
+	e.GET("/RecordMatchRunLinks/:id", handler)
+	e.ServeHTTP(rw, r)
+	c.Assert(rw.Code, Equals, http.StatusOK)
+	var links []ptm_models.Link
+	decoder := json.NewDecoder(rw.Body)
+	err = decoder.Decode(&links)
+	util.CheckErr(err)
+	c.Assert(len(links), Equals, 2)
+	lastLink := links[1]
+	c.Assert(lastLink.Score, Equals, 0.82)
+	c.Assert(lastLink.Source, Equals, "http://localhost:3001/Patient/5616b69a1cd462440e0006ae")
+	c.Assert(lastLink.Target, Equals, "http://localhost:3001/Patient/57335da265ddb433bd30f0ee")
+	c.Assert(lastLink.Match, Equals, "probable")
 }
 
 func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
@@ -97,7 +125,7 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 
 	// Build a record match run
 	// construct a record match request
-	req := controller.newRecordMatchRequest("http://localhost/fhir", recMatchRun)
+	req := newRecordMatchRequest("http://localhost/fhir", recMatchRun, database)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchDedupRequest",
@@ -131,7 +159,7 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 
 	// Build a record match run
 	// construct a record match request
-	req := controller.newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun)
+	req := newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun, database)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchQueryRequest",
@@ -144,7 +172,6 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 // TestNewMessageHeader tests that a MessageHeader for a record-match
 // request is constructed from information in a RecordMatchRun object.
 func (s *ServerSuite) TestNewMessageHeader(c *C) {
-	c.Assert(controller.Database, NotNil)
 	// Insert a record match system interface to the DB
 	r := ptm_models.InsertResourceFromFile(database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
 	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
@@ -157,7 +184,7 @@ func (s *ServerSuite) TestNewMessageHeader(c *C) {
 	// Build a record match run
 	// construct a record match request
 	src := "http://replace.me/with/selurl/global"
-	msgHdr, _ := controller.newMessageHeader(src, recMatchRun)
+	msgHdr, _ := newMessageHeader(src, recMatchRun, database)
 	c.Assert(msgHdr, NotNil)
 	c.Assert(msgHdr.Source.Endpoint, Equals, src)
 	c.Assert(msgHdr.Event.Code, Equals, "record-match")
