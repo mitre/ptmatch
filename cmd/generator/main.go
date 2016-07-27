@@ -59,7 +59,6 @@ func main() {
 	}
 	decoder := json.NewDecoder(resp.Body)
 	decoder.Decode(recordSet)
-	fmt.Printf("Got record set id of %s", recordSet.ID.Hex())
 
 	fuzzers := []PatientFuzzer{AbbreviateFirstName, TransposeBirthDayMonth, ShuffleLastName}
 	tagCoding := models.Coding{System: tagURL, Code: tagValue(*recordSetName)}
@@ -129,8 +128,6 @@ func PostAnswerKey(answerKey *models.Bundle, recordSetId, fhirUrl string) error 
 		return err
 	}
 
-	//req, _ := http.NewRequest("POST", fhirUrl, body)
-	//client := &http.Client{}
 	_, err = http.Post(fhirUrl, contentType, body)
 	return err
 }
@@ -148,7 +145,6 @@ func PostAndGetLocation(resource interface{}, url string) (string, error) {
 		return "", err
 	}
 	if resp.StatusCode == http.StatusCreated && len(resp.Header["Location"]) == 1 {
-		fmt.Printf("Got location: %s\n", resp.Header["Location"][0])
 		return resp.Header["Location"][0], nil
 	}
 	return "", errors.New("Couldn't find a location for the resource")
