@@ -1,9 +1,7 @@
 {
 	"ImportPath": "github.com/mitre/ptmatch",
 	"GoVersion": "go1.6",
-	"Packages": [
-		"./..."
-	],
+	"GodepVersion": "v74",
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -67,10 +65,6 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3"
-		},
-		{
-			"ImportPath": "gopkg.in/check.v1",
-			"Rev": "64131543e7896d5bcc6bd5a76287eb75ea96c673"
 		},
 		{
 			"ImportPath": "gopkg.in/go-playground/validator.v8",
