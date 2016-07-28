@@ -1,12 +1,19 @@
 {
 	"ImportPath": "github.com/mitre/ptmatch",
 	"GoVersion": "go1.6",
-	"GodepVersion": "v74",
+	"GodepVersion": "v58",
+	"Packages": [
+		"./..."
+	],
 	"Deps": [
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.10.0",
 			"Rev": "4b6ea7319e214d98c938f12692336f7ca9348d6b"
+		},
+		{
+			"ImportPath": "github.com/davecgh/go-spew/spew",
+			"Rev": "5215b55f46b2b919f50a1df0eaa5886afe4e3b3d"
 		},
 		{
 			"ImportPath": "github.com/gin-gonic/gin",
@@ -28,6 +35,10 @@
 			"Rev": "8d92cf5fc15a4382f8964b08e1f42a75c0591aa3"
 		},
 		{
+			"ImportPath": "github.com/icrowley/fake",
+			"Rev": "84bff6d01560fb0b5a396ba29534e93fd00d09c6"
+		},
+		{
 			"ImportPath": "github.com/intervention-engine/fhir/models",
 			"Comment": "DSTU1-139-ge85a326",
 			"Rev": "e85a32653a2ba78ca724d8c68c21a1b60664a036"
@@ -41,6 +52,14 @@
 			"ImportPath": "github.com/intervention-engine/fhir/server",
 			"Comment": "DSTU1-139-ge85a326",
 			"Rev": "e85a32653a2ba78ca724d8c68c21a1b60664a036"
+		},
+		{
+			"ImportPath": "github.com/intervention-engine/ptgen",
+			"Rev": "a58e2cc7b8ef590610c47e0f59b466586bc14de9"
+		},
+		{
+			"ImportPath": "github.com/jmcvetta/randutil",
+			"Rev": "2bb1b664bcff821e02b2a0644cd29c7e824d54f8"
 		},
 		{
 			"ImportPath": "github.com/manucorporat/sse",
@@ -65,6 +84,14 @@
 		{
 			"ImportPath": "golang.org/x/sys/unix",
 			"Rev": "5eaf0df67e70d6997a9fe0ed24383fa1b01638d3"
+		},
+		{
+			"ImportPath": "golang.org/x/tools/container/intsets",
+			"Rev": "c86fe5956d4575f29850535871a97abbd403a145"
+		},
+		{
+			"ImportPath": "gopkg.in/check.v1",
+			"Rev": "4f90aeace3a26ad7021961c297b22c42160c7b25"
 		},
 		{
 			"ImportPath": "gopkg.in/go-playground/validator.v8",

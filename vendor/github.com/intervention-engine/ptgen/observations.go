@@ -7,7 +7,7 @@ import (
 )
 
 func GenerateBP(ctx Context) []models.Observation {
-	sys, dia := models.Observation{Status: "final"}, models.Observation{Status: "final"}
+	sys, dia := models.Observation{}, models.Observation{}
 	sys.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "8480-6", System: "http://loinc.org"}}, Text: "Systolic Blood Pressure"}
 	dia.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "8462-4", System: "http://loinc.org"}}, Text: "Diastolic Blood Pressure"}
 	switch ctx.Hypertention {
@@ -28,7 +28,7 @@ func GenerateBP(ctx Context) []models.Observation {
 }
 
 func GenerateCholesterol(ctx Context) []models.Observation {
-	ldl, hdl, tri := models.Observation{Status: "final"}, models.Observation{Status: "final"}, models.Observation{Status: "final"}
+	ldl, hdl, tri := models.Observation{}, models.Observation{}, models.Observation{}
 	ldl.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "13457-7", System: "http://loinc.org"}}, Text: "Plasma LDL Cholesterol Measurement"}
 	hdl.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "2085-9", System: "http://loinc.org"}}, Text: "Plasma HDL Cholesterol Measurement"}
 	tri.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "3043-7", System: "http://loinc.org"}}, Text: "Plasma Triglyceride Measurement"}
@@ -64,7 +64,7 @@ func GenerateCholesterol(ctx Context) []models.Observation {
 }
 
 func GenerateWeightAndHeight(ctx Context) []models.Observation {
-	w, h := models.Observation{Status: "final"}, models.Observation{Status: "final"}
+	w, h := models.Observation{}, models.Observation{}
 	w.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "29463-7", System: "http://loinc.org"}}, Text: "Body Weight"}
 	h.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "8302-2", System: "http://loinc.org"}}, Text: "Body Height"}
 
@@ -79,7 +79,7 @@ func GenerateWeightAndHeight(ctx Context) []models.Observation {
 }
 
 func GenerateBloodSugars(ctx Context) []models.Observation {
-	gluc, ha1c := models.Observation{Status: "final"}, models.Observation{Status: "final"}
+	gluc, ha1c := models.Observation{}, models.Observation{}
 	gluc.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "1558-6", System: "http://loinc.org"}}, Text: "Fasting Glucose"}
 	ha1c.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: "4548-4", System: "http://loinc.org"}}, Text: "Hemoglobin A1c"}
 
