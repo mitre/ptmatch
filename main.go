@@ -16,11 +16,15 @@ limitations under the License.
 package main
 
 import (
-	"net/http"
+	"flag"
+	"fmt"
 	"os"
 
 	"github.com/gin-gonic/gin"
+	"github.com/intervention-engine/fhir/auth"
 	fhirSvr "github.com/intervention-engine/fhir/server"
+	"github.com/mitre/heart"
+	"github.com/mitre/ptmatch/middleware"
 	"github.com/mitre/ptmatch/server"
 )
 
@@ -32,12 +36,42 @@ func main() {
 	}
 
 	s := fhirSvr.NewServer(mongoHost)
-	server.Setup(s)
 
-	s.Engine.GET("/", welcome)
-	s.Run(fhirSvr.Config{})
-}
+	assetPath := flag.String("assets", "", "Path to static assets to host")
+	jwkPath := flag.String("heartJWK", "", "Path the JWK for the HEART client")
+	clientID := flag.String("heartClientID", "", "Client ID registered with the OP")
+	opURL := flag.String("heartOP", "", "URL for the OpenID Provider")
+	sessionSecret := flag.String("secret", "", "Secret for the cookie session")
 
-func welcome(c *gin.Context) {
-	c.String(http.StatusOK, "Patient Matching Test Harness Server")
+	flag.Parse()
+
+	var authConfig auth.Config
+
+	if *jwkPath != "" {
+		if *clientID == "" || *opURL == "" {
+			fmt.Println("You must provide both a client ID and OP URL for HEART mode")
+			return
+		}
+		secret := *sessionSecret
+		if secret == "" {
+			secret = "reallySekret"
+		}
+		heart.SetUpRoutes(*jwkPath, *clientID, *opURL,
+			"http://localhost:3001", secret, s.Engine)
+	}
+
+	recMatchWatch := middleware.PostProcessRecordMatchResponse()
+	s.AddMiddleware("Bundle", recMatchWatch)
+
+	ar := func(e *gin.Engine) {
+		server.Setup(e)
+
+		if *assetPath != "" {
+			e.StaticFile("/", fmt.Sprintf("%s/index.html", *assetPath))
+			e.Static("/assets", fmt.Sprintf("%s/assets", *assetPath))
+		}
+	}
+
+	s.AfterRoutes = append(s.AfterRoutes, ar)
+	s.Run(fhirSvr.Config{Auth: authConfig, ServerURL: "http://localhost:3001"})
 }

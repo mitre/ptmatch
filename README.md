@@ -8,7 +8,7 @@ based user interface for this project is provided in the [Patient Match Frontend
 
 ## Environment
 
-This project currently uses Go 1.6 and is built using the Go toolchain.
+This project currently uses Go 1.7 and is built using the Go toolchain.
 
 To install Go, follow the instructions found at the [Go Website](http://golang.org/doc/install).
 
@@ -35,6 +35,25 @@ This project also requires MongoDB 3.2.* or higher. To install MongoDB, refer to
 To start the application, simply run main.go:
 
     go run main.go
+
+You can also run the application with the assets flag to serve static assets:
+
+    go run main -assets PATH_TO_ASSETS
+
+In this case, PATH_TO_ASSETS should be a location where a version  
+[Patient Match Frontend](https://github.com/mitre/ptmatch-frontend) has been built.
+
+## HEART authentication and authorization:
+
+This server has the ability to authenticate users by acting as a [HEART](http://openid.net/wg/heart/)
+compliant OpenID Connect relying party. It can also perform OAuth 2.0 token
+introspection in a HEART compliant manner. To enable it, the following command
+line flags must be used:
+
+    -heartJWK - The path to the client's private key in [JWK format](https://tools.ietf.org/html/rfc7517). The
+                public key must be registered at the OpenID Connect Provider
+    -heartOP - The URL of the HEART compliant OpenID Connect Provider
+    -heartClientID - The client identifier for this system as registered at the OpenID Connect Provider
 
 ## License
 

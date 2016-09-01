@@ -23,6 +23,9 @@ func GenerateMedication(medicationID int, onset *models.FHIRDateTime, abatement 
 		ms.EffectivePeriod = &models.Period{Start: onset}
 		if abatement != nil {
 			ms.EffectivePeriod.End = abatement
+			ms.Status = "completed"
+		} else {
+			ms.Status = "active"
 		}
 		var medName string
 		if mmd.TradeName == "N/A" {

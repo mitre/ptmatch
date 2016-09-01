@@ -35,6 +35,7 @@ import (
 
 	fhir_svr "github.com/intervention-engine/fhir/server"
 	logger "github.com/mitre/ptmatch/logger"
+	"github.com/mitre/ptmatch/middleware"
 	ptm_models "github.com/mitre/ptmatch/models"
 )
 
@@ -63,7 +64,9 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 	database := mongoSession.DB("ptmatch-test")
 	fhir_svr.Database = database
 
-	Setup(s.Server)
+	Setup(s.Server.Engine)
+	recMatchWatch := middleware.PostProcessRecordMatchResponse()
+	s.Server.AddMiddleware("Bundle", recMatchWatch)
 
 	fhir_svr.RegisterRoutes(s.Server.Engine,
 		s.Server.MiddlewareConfig, fhir_svr.NewMongoDataAccessLayer(database),

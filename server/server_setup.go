@@ -18,13 +18,11 @@ package server
 import (
 	"net/http"
 
-	"github.com/Sirupsen/logrus"
 	"github.com/gin-gonic/gin"
 	"github.com/thoas/stats"
 
 	rc "github.com/mitre/ptmatch/controllers"
 	logger "github.com/mitre/ptmatch/logger"
-	mw "github.com/mitre/ptmatch/middleware"
 	"gopkg.in/mgo.v2"
 
 	fhir_svr "github.com/intervention-engine/fhir/server"
@@ -36,41 +34,30 @@ func Database() *mgo.Database {
 }
 
 // Setup performs initialization of the middleware and routes.
-func Setup(svr *fhir_svr.FHIRServer) {
-	logger.Log.WithFields(
-		logrus.Fields{"method": "Setup",
-			"bundle Mware": svr.MiddlewareConfig["Bundle"]}).Info("before set")
-
-	registerMiddleware(svr)
-	registerRoutes(svr)
-	logger.Log.WithFields(
-		logrus.Fields{"method": "Setup",
-			"bundle Mware": svr.MiddlewareConfig["Bundle"]}).Info("mware set?")
+func Setup(e *gin.Engine) {
+	registerMiddleware(e)
+	registerRoutes(e)
 }
 
-func registerMiddleware(svr *fhir_svr.FHIRServer) {
+func registerMiddleware(e *gin.Engine) {
 	//------------------------
 	// Third-party middleware
 	//------------------------
 	// See https://github.com/thoas/stats
 	s := stats.New()
-	svr.Engine.Use(func(ctx *gin.Context) {
+	e.Use(func(ctx *gin.Context) {
 		beginning, recorder := s.Begin(ctx.Writer)
 		ctx.Next()
 		s.End(beginning, recorder)
 	})
 	// Route
-	svr.Engine.GET("/stats", func(c *gin.Context) {
+	e.GET("/stats", func(c *gin.Context) {
 		logger.Log.Info("In stats")
 		c.JSON(http.StatusOK, s.Data())
 	})
-
-	recMatchWatch := mw.PostProcessRecordMatchResponse()
-
-	svr.AddMiddleware("Bundle", recMatchWatch)
 }
 
-func registerRoutes(svr *fhir_svr.FHIRServer) {
+func registerRoutes(e *gin.Engine) {
 	controller := rc.ResourceController{}
 	controller.DatabaseProvider = Database
 
@@ -78,24 +65,24 @@ func registerRoutes(svr *fhir_svr.FHIRServer) {
 		"RecordMatchSystemInterface", "RecordSet"}
 
 	for _, name := range resourceNames {
-		svr.Engine.GET("/"+name+"/:id", controller.GetResource)
-		svr.Engine.POST("/"+name, controller.CreateResource)
-		svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
-		svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
-		svr.Engine.GET("/"+name, controller.GetResources)
+		e.GET("/"+name+"/:id", controller.GetResource)
+		e.POST("/"+name, controller.CreateResource)
+		e.PUT("/"+name+"/:id", controller.UpdateResource)
+		e.DELETE("/"+name+"/:id", controller.DeleteResource)
+		e.GET("/"+name, controller.GetResources)
 	}
 
-	svr.Engine.POST("/AnswerKey", controller.SetAnswerKey)
+	e.POST("/AnswerKey", controller.SetAnswerKey)
 
 	name := "RecordMatchRun"
-	svr.Engine.GET("/"+name, controller.GetResources)
-	svr.Engine.GET("/"+name+"/:id", controller.GetResource)
-	svr.Engine.POST("/"+name, rc.CreateRecordMatchRunHandler(Database))
-	svr.Engine.PUT("/"+name+"/:id", controller.UpdateResource)
-	svr.Engine.DELETE("/"+name+"/:id", controller.DeleteResource)
+	e.GET("/"+name, controller.GetResources)
+	e.GET("/"+name+"/:id", controller.GetResource)
+	e.POST("/"+name, rc.CreateRecordMatchRunHandler(Database))
+	e.PUT("/"+name+"/:id", controller.UpdateResource)
+	e.DELETE("/"+name+"/:id", controller.DeleteResource)
 
-	svr.Engine.GET("/RecordMatchRunMetrics", rc.GetRecordMatchRunMetricsHandler(Database))
-	svr.Engine.GET("/RecordMatchRunLinks/:id", rc.GetRecordMatchRunLinksHandler(Database))
+	e.GET("/RecordMatchRunMetrics", rc.GetRecordMatchRunMetricsHandler(Database))
+	e.GET("/RecordMatchRunLinks/:id", rc.GetRecordMatchRunLinksHandler(Database))
 
-	svr.Engine.Static("/ptmatch/api/", "api")
+	e.Static("/ptmatch/api/", "api")
 }

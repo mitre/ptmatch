@@ -48,14 +48,14 @@ func GenerateConditions(ctx Context, md []ConditionMetadata) []models.Condition 
 		conditions = append(conditions, ht)
 		complication := rand.Intn(5)
 		if complication == 1 {
-			chf := models.Condition{}
+			chf := models.Condition{VerificationStatus: "confirmed"}
 			chfmd := conditionByName("Congestive Heart Failure", md)
 			chf.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: chfmd.ICD9, System: "http://hl7.org/fhir/sid/icd-9"}}, Text: chfmd.Display}
 			chf.OnsetDateTime = &models.FHIRDateTime{Time: ht.OnsetDateTime.Time.AddDate(rand.Intn(2), rand.Intn(10), rand.Intn(28)), Precision: models.Date}
 			conditions = append(conditions, chf)
 		}
 		if complication == 2 {
-			phd := models.Condition{}
+			phd := models.Condition{VerificationStatus: "confirmed"}
 			phdmd := conditionByName("Pulmonary Heart Disease", md)
 			phd.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: phdmd.ICD9, System: "http://hl7.org/fhir/sid/icd-9"}}, Text: phdmd.Display}
 			phd.OnsetDateTime = &models.FHIRDateTime{Time: ht.OnsetDateTime.Time.AddDate(rand.Intn(2), rand.Intn(10), rand.Intn(28)), Precision: models.Date}
@@ -108,7 +108,7 @@ func GenerateConditions(ctx Context, md []ConditionMetadata) []models.Condition 
 }
 
 func generateCondition(name string, yearOffset int, md []ConditionMetadata) models.Condition {
-	c := models.Condition{}
+	c := models.Condition{VerificationStatus: "confirmed"}
 	cmd := conditionByName(name, md)
 	c.Code = &models.CodeableConcept{Coding: []models.Coding{{Code: cmd.ICD9, System: "http://hl7.org/fhir/sid/icd-9"}}, Text: cmd.Display}
 	c.OnsetDateTime = &models.FHIRDateTime{Time: randomOnset(yearOffset), Precision: models.Date}
@@ -116,13 +116,13 @@ func generateCondition(name string, yearOffset int, md []ConditionMetadata) mode
 	if recoveryDiceRoll <= cmd.AbatementChance {
 		switch cmd.RecoveryEstimate {
 		case "week":
-			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 0, 7), Precision: models.Timestamp}
+			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 0, 7), Precision: models.Date}
 		case "threeMonths":
-			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 3, 0), Precision: models.Timestamp}
+			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 3, 0), Precision: models.Date}
 		case "sixMonths":
-			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 6, 0), Precision: models.Timestamp}
+			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(0, 6, 0), Precision: models.Date}
 		case "threeYears":
-			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(3, 0, 0), Precision: models.Timestamp}
+			c.AbatementDateTime = &models.FHIRDateTime{Time: c.OnsetDateTime.Time.AddDate(3, 0, 0), Precision: models.Date}
 		}
 	}
 
