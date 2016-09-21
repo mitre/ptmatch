@@ -18,7 +18,7 @@ package controllers
 
 import (
 	"bytes"
-	"fmt"
+	"errors"
 	"net/http"
 	"strconv"
 	"strings"
@@ -82,7 +82,14 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 		}
 
 		// construct a record match request
-		reqMatchRequest := newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchRun, provider())
+		reqMatchRequest, err := newRecordMatchRequest(recMatchSysIface.ResponseEndpoint, recMatchRun, provider())
+		if err != nil {
+			logger.Log.WithFields(
+				logrus.Fields{"method": "CreateRecordMatchRun",
+					"err": err}).Warn("Unable to create Record Match Request")
+			ctx.AbortWithError(http.StatusBadRequest, err)
+			return
+		}
 		// attach the request message to the run object
 		recMatchRun.Request = *reqMatchRequest
 
@@ -96,7 +103,7 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 				"server endpoint": svrEndpoint,
 				"reqBody":         string(reqBody[:]),
 				"message":         reqMatchRequest.Message,
-				"request":         reqMatchRequest}).Info("About to submit request")
+				"request":         string(reqBody)}).Info("About to submit request")
 
 		reqMatchRequest.SubmittedOn = time.Now()
 		// submit the record match request
@@ -105,7 +112,7 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 		if err != nil {
 			logger.Log.WithFields(
 				logrus.Fields{"method": "CreateRecordMatchRun",
-					"err": err}).Error("Sending Record Match Request")
+					"err": err}).Warn("Sending Record Match Request")
 			ctx.AbortWithError(http.StatusInternalServerError, err)
 			return
 		}
@@ -141,7 +148,9 @@ func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerF
 		validRecordSetId := len(recordSetId) > 1 && len(recordSetId) <= 24 && bson.IsObjectIdHex(recordSetId)
 
 		logger.Log.WithFields(
-			logrus.Fields{"resource type": resourceType, "rec match sys": recordMatchSystemInterfaceId, "record set": recordSetId}).Info("GetRecordMatchRunMetrics")
+			logrus.Fields{"resource type": resourceType,
+				"rec match sys": recordMatchSystemInterfaceId,
+				"record set":    recordSetId}).Info("GetRecordMatchRunMetrics")
 
 		resources := ptm_models.NewSliceForResourceName(resourceType, 0, 0)
 		c := provider().C(ptm_models.GetCollectionName(resourceType))
@@ -153,8 +162,8 @@ func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerF
 				// find the record match runs with masterRecordSetId or queryRecordSetId == record set id
 				logrus.Fields{"validRecord Set Id": validRecordSetId, "record set": recordSetId}).Info("GetRecordMatchRunMetrics")
 
-			recordSetBsonId, _ := ptm_models.ToBsonObjectID(recordSetId)
-			query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonId}, bson.M{"queryRecordSetId": recordSetBsonId}}})
+			recordSetBsonID, _ := ptm_models.ToBsonObjectID(recordSetId)
+			query = c.Find(bson.M{"$or": []bson.M{bson.M{"masterRecordSetId": recordSetBsonID}, bson.M{"queryRecordSetId": recordSetBsonID}}})
 
 		} else if validRecordMatchSystemInterfaceId {
 			recordMatchSystemInterfaceBsonId, _ := ptm_models.ToBsonObjectID(recordMatchSystemInterfaceId)
@@ -168,7 +177,10 @@ func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerF
 		}
 
 		// constrain which fields are returned
-		err := query.Select(bson.M{"meta": 1, "metrics": 1, "recordMatchSystemInterfaceId": 1, "matchingMode": 1, "recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1, "recordMatchContextId": 1}).All(resources)
+		err := query.Select(bson.M{"meta": 1, "metrics": 1,
+			"recordMatchSystemInterfaceId": 1, "matchingMode": 1,
+			"recordResourceType": 1, "masterRecordSetId": 1, "queryRecordSetId": 1,
+			"recordMatchContextId": 1}).All(resources)
 
 		if err != nil {
 			if err == mgo.ErrNotFound {
@@ -264,7 +276,7 @@ func prepEndpoint(baseURL, id string) string {
 }
 
 func newRecordMatchRequest(srcEndpoint string,
-	recMatchRun *ptm_models.RecordMatchRun, db *mgo.Database) *ptm_models.RecordMatchRequest {
+	recMatchRun *ptm_models.RecordMatchRun, db *mgo.Database) (*ptm_models.RecordMatchRequest, error) {
 
 	req := &ptm_models.RecordMatchRequest{ID: bson.NewObjectId()}
 	req.Message = &fhir_models.Bundle{}
@@ -281,13 +293,15 @@ func newRecordMatchRequest(srcEndpoint string,
 
 	msgHdr, err := newMessageHeader(srcEndpoint, recMatchRun, db)
 	if err != nil {
-		//TODO What should I do here?  panic?
-		panic(fmt.Sprintf("Not IMPL: New Msg Hdr returned error: %s", err.Error()))
+		return nil, err
 	}
 	req.Message.Entry[0].Resource = msgHdr
 	req.Message.Entry[0].FullUrl = "urn:uuid:" + msgHdr.Id
 
-	addRecordSetParams(recMatchRun, req.Message, db)
+	err = addRecordSetParams(recMatchRun, req.Message, db)
+	if err != nil {
+		return nil, err
+	}
 	msgHdr.Data = make([]fhir_models.Reference, numEntries-1)
 
 	msgHdr.Data[0].Reference = req.Message.Entry[1].FullUrl
@@ -303,7 +317,7 @@ func newRecordMatchRequest(srcEndpoint string,
 			"match mode":  recMatchRun.MatchingMode,
 			"num entries": numEntries}).Debug("NewRecordMatchRequest")
 
-	return req
+	return req, nil
 }
 
 // newMessageHeader constructs a FHIR MessageHeader resource using the information
@@ -343,11 +357,13 @@ func newMessageHeader(
 	return &msgHdr, nil
 }
 
-func addRecordSetParams(recMatchRun *ptm_models.RecordMatchRun, msg *fhir_models.Bundle, db *mgo.Database) error {
+func addRecordSetParams(recMatchRun *ptm_models.RecordMatchRun,
+	msg *fhir_models.Bundle, db *mgo.Database) error {
 	// retrieve the info for the master record Set
 	obj, err := ptm_models.LoadResource(db, "RecordSet", recMatchRun.MasterRecordSetID)
 	if err != nil {
-		return err
+		return errors.New("Unable to load master record set, id: " +
+			recMatchRun.MasterRecordSetID.Hex())
 	}
 	masterRecSet := obj.(*ptm_models.RecordSet)
 	params := buildParams("master", masterRecSet)
@@ -364,7 +380,8 @@ func addRecordSetParams(recMatchRun *ptm_models.RecordMatchRun, msg *fhir_models
 		obj, err := ptm_models.LoadResource(
 			db, "RecordSet", recMatchRun.QueryRecordSetID)
 		if err != nil {
-			return err
+			return errors.New("Unable to load query record set, id: " +
+				recMatchRun.QueryRecordSetID.Hex())
 		}
 		queryRecSet := obj.(*ptm_models.RecordSet)
 		params = buildParams(ptm_models.Query, queryRecSet)
