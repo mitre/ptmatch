@@ -1,9 +1,11 @@
 sudo: false
 language: go
 go:
-- 1.6
-install: true
-script: go test $(go list ./... | grep -v /vendor/)
+- 1.7
+install:
+- go get github.com/Masterminds/glide
+- glide install
+script: go test $(glide novendor)
 services:
 - mongodb
 branches:
