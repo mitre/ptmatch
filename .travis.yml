@@ -8,7 +8,5 @@ install:
 script: go test $(glide novendor)
 services:
 - mongodb
-branches:
-  only:
-  - master
+
   
