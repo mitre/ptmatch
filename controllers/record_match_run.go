@@ -102,8 +102,7 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 			logrus.Fields{"method": "CreateRecordMatchRun",
 				"server endpoint": svrEndpoint,
 				"reqBody":         string(reqBody[:]),
-				"message":         reqMatchRequest.Message,
-				"request":         string(reqBody)}).Info("About to submit request")
+				"message":         reqMatchRequest.Message}).Info("About to submit request")
 
 		reqMatchRequest.SubmittedOn = time.Now()
 		// submit the record match request
