@@ -121,11 +121,13 @@ func (s *ServerSuite) TestNewRecordMatchDedupRequest(c *C) {
 	// Insert a corresponding record match run to the DB
 	recMatchRun := &ptm_models.RecordMatchRun{}
 	ptm_models.LoadResourceFromFile("../fixtures/record-match-run-post-01.json", recMatchRun)
+	recMatchRun.MasterRecordSetID = masterRecSet.ID
 	recMatchRun.RecordMatchSystemInterfaceID = recMatchSysIface.ID
 
 	// Build a record match run
 	// construct a record match request
-	req := newRecordMatchRequest("http://localhost/fhir", recMatchRun, database)
+	req, err := newRecordMatchRequest("http://localhost/fhir", recMatchRun, database)
+	c.Assert(err, IsNil)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchDedupRequest",
@@ -159,7 +161,8 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 
 	// Build a record match run
 	// construct a record match request
-	req := newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun, database)
+	req, err := newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun, database)
+	c.Assert(err, IsNil)
 	buf, _ := req.Message.MarshalJSON()
 	logger.Log.WithFields(
 		logrus.Fields{"method": "TestNewRecordMatchQueryRequest",
@@ -167,6 +170,42 @@ func (s *ServerSuite) TestNewRecordMatchQueryRequest(c *C) {
 	c.Assert(req, NotNil)
 	c.Assert(req.Message.Type, Equals, "message")
 	c.Assert(len(req.Message.Entry), Equals, 3) //MsgHdr + two Param`
+}
+
+func (s *ServerSuite) TestRecordMatchRequestMissingRecordSet(c *C) {
+	// Insert a record match system interface to the DB
+	r := ptm_models.InsertResourceFromFile(database, "RecordMatchSystemInterface", "../fixtures/record-match-sys-if-01.json")
+	recMatchSysIface := r.(*ptm_models.RecordMatchSystemInterface)
+	c.Assert(*recMatchSysIface, NotNil)
+
+	// Insert a record set to the DB
+	r = ptm_models.InsertResourceFromFile(database, "RecordSet", "../fixtures/record-set-01.json")
+	masterRecSet := r.(*ptm_models.RecordSet)
+	c.Assert(*masterRecSet, NotNil)
+
+	// Insert a 2nd record set to the DB
+	r = ptm_models.InsertResourceFromFile(database, "RecordSet", "../fixtures/record-set-02.json")
+	queryRecSet := r.(*ptm_models.RecordSet)
+	c.Assert(*queryRecSet, NotNil)
+
+	recMatchRun := &ptm_models.RecordMatchRun{}
+	recMatchRun.RecordMatchSystemInterfaceID = recMatchSysIface.ID
+	recMatchRun.MatchingMode = "query"
+	// ensure the master record set ID doesn't match the one loaded above
+	recMatchRun.MasterRecordSetID = "569408c1a291020e5b3636f1"
+	recMatchRun.QueryRecordSetID = queryRecSet.ID
+
+	// construct a record match request
+	req, err := newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun, database)
+	c.Assert(err, NotNil)
+	c.Assert(req, IsNil)
+
+	// Modify the record match run so the master record set exists and query doesn't
+	recMatchRun.MasterRecordSetID = masterRecSet.ID
+	recMatchRun.QueryRecordSetID = "569408c1a291020e5b3636f1"
+  req, err = newRecordMatchRequest("http://replace.me/with/selurl/global", recMatchRun, database)
+	c.Assert(err, NotNil)
+	c.Assert(req, IsNil)
 }
 
 // TestNewMessageHeader tests that a MessageHeader for a record-match
