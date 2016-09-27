@@ -4,7 +4,7 @@ This project is an implementation of the services described in [Patient Matching
 It provides the REST/JSON based services to handle the management of record matching system entries, test data sets and matching runs.
 
 This project builds on the [Intervention Engine FHIR Server](https://github.com/intervention-engine/fhir) for all FHIR services. A web
-based user interface for this project is provided in the [Patient Match Frontend Project](https://github.com/mitre/ptmatch-frontend). 
+based user interface for this project is provided in the [Patient Match Frontend Project](https://github.com/mitre/ptmatch-frontend).
 
 ## Environment
 
@@ -20,12 +20,15 @@ Assuming your working directory is $GOPATH/src/github.com/mitre, the git command
 
     git clone https://github.com/mitre/ptmatch.git
 
-This project uses [Godep](https://github.com/tools/godep) to manage dependencies. All of the needed related
-libraries are included in the vendor directory.
+This project uses [Glide](https://github.com/Masterminds/glide) to manage dependencies. To get all of
+the needed run:
+
+    go get github.com/Masterminds/glide
+    glide install
 
 To run all of the tests for this project, run:
 
-    go test $(go list ./... | grep -v /vendor/)
+    go test $(glide novendor)
 
 in this directory.
 

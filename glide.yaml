@@ -1,0 +1,19 @@
+package: github.com/mitre/ptmatch
+import:
+- package: github.com/Sirupsen/logrus
+- package: github.com/gin-gonic/gin
+- package: github.com/intervention-engine/fhir
+  subpackages:
+  - auth
+  - models
+  - server
+- package: github.com/intervention-engine/ptgen
+- package: github.com/mitre/heart
+- package: github.com/pebbe/util
+- package: github.com/satori/go.uuid
+- package: github.com/thoas/stats
+- package: gopkg.in/mgo.v2
+  subpackages:
+  - bson
+testImport:
+- package: gopkg.in/check.v1
