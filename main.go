@@ -73,5 +73,7 @@ func main() {
 	}
 
 	s.AfterRoutes = append(s.AfterRoutes, ar)
-	s.Run(fhirSvr.Config{Auth: authConfig, ServerURL: "http://localhost:3001"})
+	s.Run(fhirSvr.Config{Auth: authConfig,
+		ServerURL:    "http://localhost:3001",
+		DatabaseName: "fhir"})
 }
