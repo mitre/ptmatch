@@ -23,7 +23,6 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/intervention-engine/fhir/auth"
 	fhirSvr "github.com/intervention-engine/fhir/server"
-	"github.com/mitre/heart"
 	"github.com/mitre/ptmatch/middleware"
 	"github.com/mitre/ptmatch/server"
 )
@@ -56,8 +55,9 @@ func main() {
 		if secret == "" {
 			secret = "reallySekret"
 		}
-		heart.SetUpRoutes(*jwkPath, *clientID, *opURL,
-			"http://localhost:3001", secret, s.Engine)
+		authConfig = auth.HEART(*clientID, *jwkPath, *opURL, secret)
+	} else {
+		authConfig = auth.None()
 	}
 
 	recMatchWatch := middleware.PostProcessRecordMatchResponse()
