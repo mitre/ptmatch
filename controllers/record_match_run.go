@@ -105,16 +105,30 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 				"message":         reqMatchRequest.Message}).Info("About to submit request")
 
 		reqMatchRequest.SubmittedOn = time.Now()
-		// submit the record match request
+
+		// Send the record match request to a FHIR server acting as msg broker.
 		resp, err := ptm_http.Put(svrEndpoint, "application/json+fhir",
 			bytes.NewReader(reqBody))
 		if err != nil {
-			logger.Log.WithFields(
-				logrus.Fields{"method": "CreateRecordMatchRun",
-					"err": err}).Warn("Sending Record Match Request")
-			ctx.AbortWithError(http.StatusInternalServerError, err)
-			return
+			// HACK In this configuration, the test harness only supports itself as the FHIR message broker
+			if resp.StatusCode == 302 {
+				logger.Log.Debug("CreateRecordMatchRun: redirect detected - Infer server is in Heart mode")
+				_, err = ptm_models.PersistFhirResource(provider(), "Bundle", reqMatchRequest.Message)
+				if err != nil {
+					ctx.AbortWithError(http.StatusInternalServerError, err)
+					return
+				}
+			} else {
+				logger.Log.WithFields(
+					logrus.Fields{"method": "CreateRecordMatchRun",
+						"err": err}).Warn("Sending Record Match Request")
+				ctx.AbortWithError(http.StatusInternalServerError, err)
+				return
+			}
 		}
+		logger.Log.WithFields(
+			logrus.Fields{"method": "CreateRecordMatchRun",
+				"status": resp.StatusCode}).Info("Put Response Status")
 
 		// Store status, Sent, with the run object
 		recMatchRun.Status = make([]ptm_models.RecordMatchRunStatusComponent, 1)
@@ -122,6 +136,8 @@ func CreateRecordMatchRunHandler(provider func() *mgo.Database) gin.HandlerFunc 
 		// if a success code was received
 		if resp.StatusCode >= 200 && resp.StatusCode < 300 {
 			recMatchRun.Status[0].Message = "Request Sent [" + resp.Status + "]"
+		} else if resp.StatusCode == 302 {
+			recMatchRun.Status[0].Message = "Redirect from Msg Broker Not Supported; Request persisted in local database"
 		} else {
 			recMatchRun.Status[0].Message = "Error Sending Request to Record Matcher [" + resp.Status + "]"
 		}
@@ -186,10 +202,8 @@ func GetRecordMatchRunMetricsHandler(provider func() *mgo.Database) gin.HandlerF
 				ctx.String(http.StatusNotFound, "Not Found")
 				ctx.Abort()
 				return
-			} else {
-				ctx.AbortWithError(http.StatusBadRequest, err)
-				return
 			}
+			ctx.AbortWithError(http.StatusBadRequest, err)
 		}
 
 		ctx.JSON(http.StatusOK, resources)

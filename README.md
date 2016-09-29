@@ -58,6 +58,12 @@ line flags must be used:
     -heartOP - The URL of the HEART compliant OpenID Connect Provider
     -heartClientID - The client identifier for this system as registered at the OpenID Connect Provider
 
+Note: The test harness is not able to work with an FHIR server acting as a message broker between
+the test harness and record matching system.  This condition is presumed if the
+test harness receives a redirect from the message broker. When this occurs, the
+test harness persists the record match request in its own database. No issues
+should be encountered when the test harness acts as the message broker.
+
 ## License
 
 Copyright 2016 The MITRE Corporation

@@ -16,9 +16,21 @@ limitations under the License.
 package http
 
 import (
+	"errors"
 	"io"
 	"net/http"
 )
+
+// ErrRedirectAttempt is a custom error to know if a redirect happened
+var ErrRedirectAttempt = errors.New("redirect")
+
+// HTTPClient returns an error when a redirect attempt is detected
+var HTTPClient = &http.Client{CheckRedirect: RedirectError}
+
+// RedirectError returns ErrRedirectAttempt
+func RedirectError(req *http.Request, via []*http.Request) error {
+	return ErrRedirectAttempt
+}
 
 // Put uses net/http DefaultClient to issue a PUT to the specified URL.
 //
@@ -29,10 +41,12 @@ import (
 //
 // To set custom headers, use NewRequest and Client.Do.
 func Put(url string, bodyType string, body io.Reader) (resp *http.Response, err error) {
+
 	req, err := http.NewRequest("PUT", url, body)
 	if err != nil {
 		return nil, err
 	}
 	req.Header.Set("Content-Type", bodyType)
-	return http.DefaultClient.Do(req)
+
+	return HTTPClient.Do(req)
 }
