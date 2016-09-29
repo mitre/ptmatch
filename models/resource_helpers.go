@@ -23,6 +23,7 @@ import (
 	"time"
 
 	"github.com/Sirupsen/logrus"
+	fhir_models "github.com/intervention-engine/fhir/models"
 	"github.com/pebbe/util"
 	"gopkg.in/mgo.v2"
 	"gopkg.in/mgo.v2/bson"
@@ -211,5 +212,30 @@ func LoadResourceFromFile(fileName string, resource interface{}) {
 		logger.Log.WithFields(logrus.Fields{"resource": resource, "error": err}).Warn("LoadResourceFromFile")
 		util.WarnErr(err)
 	}
+}
 
+// PersistFhirResource persists the given FHIR Resource to the database.
+func PersistFhirResource(db *mgo.Database, resourceType string, resource interface{}) (interface{}, error) {
+	c := db.C(GetCollectionName(resourceType))
+	id := bson.NewObjectId()
+
+	logger.Log.WithFields(
+		logrus.Fields{"collection": GetCollectionName(resourceType),
+			"res type": resourceType, "id": id}).Info("PersistFhirResource")
+
+	reflect.ValueOf(resource).Elem().FieldByName("Id").Set(reflect.ValueOf(id.Hex()))
+	UpdateFhirLastUpdatedDate(resource)
+	err := c.Insert(resource)
+	return resource, err
+}
+
+func UpdateFhirLastUpdatedDate(resource interface{}) {
+	m := reflect.ValueOf(resource).Elem().FieldByName("Meta")
+	if m.IsNil() {
+		newMeta := &fhir_models.Meta{}
+		m.Set(reflect.ValueOf(newMeta))
+	}
+	now := &fhir_models.FHIRDateTime{Time: time.Now(),
+		Precision: fhir_models.Timestamp}
+	m.Elem().FieldByName("LastUpdated").Set(reflect.ValueOf(now))
 }
