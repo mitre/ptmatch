@@ -3,11 +3,11 @@ import:
 - package: github.com/Sirupsen/logrus
 - package: github.com/gin-gonic/gin
 - package: github.com/intervention-engine/fhir
+  version: stu3_aug2016
   subpackages:
   - auth
   - models
   - server
-- package: github.com/intervention-engine/ptgen
 - package: github.com/mitre/heart
 - package: github.com/pebbe/util
 - package: github.com/satori/go.uuid

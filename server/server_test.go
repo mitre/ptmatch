@@ -68,8 +68,11 @@ func (s *ServerSuite) SetUpSuite(c *C) {
 	recMatchWatch := middleware.PostProcessRecordMatchResponse()
 	s.Server.AddMiddleware("Bundle", recMatchWatch)
 
+	var interceptorList map[string]fhir_svr.InterceptorList
+	masterSession := fhir_svr.NewMasterSession(mongoSession, "ptmatch-test")
+
 	fhir_svr.RegisterRoutes(s.Server.Engine,
-		s.Server.MiddlewareConfig, fhir_svr.NewMongoDataAccessLayer(database),
+		s.Server.MiddlewareConfig, fhir_svr.NewMongoDataAccessLayer(masterSession, interceptorList),
 		fhir_svr.Config{})
 }
 
